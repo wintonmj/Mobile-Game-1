@@ -103,9 +103,12 @@ export class GameController {
             this.player.setDirection(this.inputController.getMovementDirection());
         }
 
-        // Update player's moving state if not carrying
-        if (!this.player.isCarrying) {
-            this.player.setAction(this.inputController.isMoving() ? Actions.MOVING : Actions.IDLE);
+        // Update player's action based on movement and carrying state
+        const isMoving = this.inputController.isMoving();
+        if (this.player.isCarrying) {
+            this.player.setAction(isMoving ? Actions.CARRY_WALK : Actions.CARRY_IDLE);
+        } else {
+            this.player.setAction(isMoving ? Actions.MOVING : Actions.IDLE);
         }
 
         // Try moving horizontally

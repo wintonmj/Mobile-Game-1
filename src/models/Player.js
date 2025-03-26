@@ -51,16 +51,35 @@ export class Player {
             return false;
         }
 
-        // Update carrying state based on action
-        if (action.startsWith('CARRY')) {
-            this.isCarrying = true;
+        // Handle carrying state transitions
+        if (this.isCarrying) {
+            // If we're carrying and trying to set a non-carry action, convert it to the appropriate carry action
+            if (!action.startsWith('CARRY')) {
+                if (action === Actions.MOVING) {
+                    action = Actions.CARRY_WALK;
+                } else if (action === Actions.IDLE) {
+                    action = Actions.CARRY_IDLE;
+                }
+            }
+        } else {
+            // If we're not carrying and trying to set a carry action, convert it to the appropriate normal action
+            if (action.startsWith('CARRY')) {
+                if (action === Actions.CARRY_WALK) {
+                    action = Actions.MOVING;
+                } else if (action === Actions.CARRY_IDLE) {
+                    action = Actions.IDLE;
+                }
+            }
         }
 
         this.currentAction = action;
         this.currentAnimation = action;
 
         // Set cooldown for non-idle/moving actions
-        if (action !== Actions.IDLE && action !== Actions.MOVING) {
+        if (action !== Actions.IDLE && 
+            action !== Actions.MOVING && 
+            action !== Actions.CARRY_IDLE && 
+            action !== Actions.CARRY_WALK) {
             this.actionCooldowns[action] = Date.now() + 1000; // 1 second cooldown
         }
         return true;
