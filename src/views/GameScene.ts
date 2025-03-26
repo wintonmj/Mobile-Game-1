@@ -62,17 +62,29 @@ export class GameScene extends Phaser.Scene {
       
       // Update player sprite texture if it exists
       this.updatePlayerInitialTexture();
+      
+      // Force update through game controller if it exists
+      if (this.gameController && this.playerSprite) {
+        this.gameController.update();
+      }
     });
   }
   
   private updatePlayerInitialTexture(): void {
     if (this.playerSprite && this.textures.exists('idle_down')) {
       this.playerSprite.setTexture('idle_down');
+      // Also set the current action and direction to ensure consistency
+      this.playerSprite.currentAction = Actions.IDLE;
+      this.playerSprite.currentDirection = 'down';
     } else if (this.playerSprite) {
       // Fallback to any valid texture
       const textureKey = this.getFirstAvailableTexture();
       if (textureKey) {
         this.playerSprite.setTexture(textureKey);
+        // Also set appropriate action/direction based on texture
+        this.playerSprite.currentAction = Actions.IDLE;
+        this.playerSprite.currentDirection = textureKey.includes('_') ? 
+          textureKey.split('_').pop() || 'down' : 'down';
       }
     }
   }
@@ -136,6 +148,13 @@ export class GameScene extends Phaser.Scene {
     // Initialize game controller with existing parameters based on its constructor
     this.gameController = new GameController(this, this.dungeon);
     this.gameController.init();
+    
+    // If assets are already loaded, update the player texture immediately
+    if (this.assetsLoaded) {
+      this.updatePlayerInitialTexture();
+      // Force an initial update to make sure everything is properly set
+      this.gameController.update();
+    }
     
     // Set up debug text
     const debugText = this.add.text(10, 10, 'Use WASD or Arrow Keys to move\nE: Collect, 1-5: Actions, C: Carry, V: Walk', {
