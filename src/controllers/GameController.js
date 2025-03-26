@@ -104,7 +104,7 @@ export class GameController {
         }
 
         // Update player's moving state if not carrying
-        if (!this.inputController.isCarrying) {
+        if (!this.player.isCarrying) {
             this.player.setAction(this.inputController.isMoving() ? Actions.MOVING : Actions.IDLE);
         }
 

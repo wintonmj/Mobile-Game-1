@@ -51,7 +51,13 @@ export class Player {
             return false;
         }
 
+        // Update carrying state based on action
+        if (action.startsWith('CARRY')) {
+            this.isCarrying = true;
+        }
+
         this.currentAction = action;
+        this.currentAnimation = action;
 
         // Set cooldown for non-idle/moving actions
         if (action !== Actions.IDLE && action !== Actions.MOVING) {
@@ -62,6 +68,18 @@ export class Player {
 
     getCurrentAction() {
         return this.currentAction;
+    }
+
+    // Toggle carrying state
+    toggleCarrying() {
+        this.isCarrying = !this.isCarrying;
+        console.log(`Carrying state toggled: ${this.isCarrying}`);
+        // Set appropriate action based on current state
+        if (this.isCarrying) {
+            this.setAction(this.currentAction === Actions.MOVING ? Actions.CARRY_WALK : Actions.CARRY_IDLE);
+        } else {
+            this.setAction(this.currentAction === Actions.CARRY_WALK ? Actions.MOVING : Actions.IDLE);
+        }
     }
 
     // Combat methods

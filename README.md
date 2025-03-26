@@ -1,53 +1,43 @@
-# Dungeon Crawler Game
+# Mobile Game 1
 
-A simple 2D dungeon crawler game built with Phaser.js using MVC architecture.
+A 2D game built with Phaser.js featuring a player character with various actions and animations.
 
 ## Features
 
-- Tile-based movement
-- Dynamic dungeon generation
-- Player animations
-- Collision detection with walls
-
-## Setup
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Start the development server:
-```bash
-npm start
-```
-
-3. Open your browser and navigate to `http://localhost:8080`
-
-## Controls
-
-- Use arrow keys to move the player
-- Navigate through the dungeon while avoiding walls
-
-## Architecture
-
-The game follows MVC (Model-View-Controller) architecture:
-
-- **Models**: Handle game state and logic (Player, Dungeon)
-- **Views**: Handle rendering and animations (GameScene)
-- **Controllers**: Handle user input and game flow (GameController)
+- Player movement with WASD/arrow keys
+- Various player actions (collecting, cutting, mining, fishing, etc.)
+- Carrying mechanic (toggle with 'C' key)
+- Collision detection
+- Action cooldowns
 
 ## Project Structure
 
 ```
 src/
-├── assets/
-│   └── images/
-├── models/
-│   ├── Player.js
-│   └── Dungeon.js
-├── views/
-│   └── GameScene.js
 ├── controllers/
-│   └── GameController.js
-└── main.js
-``` 
+│   ├── GameController.js    # Main game logic
+│   └── InputController.js   # Input handling
+├── models/
+│   ├── Actions.js          # Game actions definitions
+│   ├── Player.js           # Player model
+│   └── Dungeon.js         # Dungeon/level management
+```
+
+## Development
+
+1. Clone the repository
+2. Install dependencies
+3. Run the development server
+
+## Controls
+
+- WASD / Arrow Keys: Movement
+- C: Toggle carrying
+- E: Collect
+- 1: Cut
+- 2: Mine
+- 3: Fish
+- 4: Water
+- 5: Pierce
+- H: Hit
+- X: Death 
