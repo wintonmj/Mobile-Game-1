@@ -116,23 +116,16 @@ export class PlayerView {
         const config = ActionAnimations[action];
         if (!config) return;  // Invalid action
 
-        // Determine sprite key and animation key based on direction
-        let spriteKey, animationKey;
+        // Handle animation based on direction
+        const isSideView = direction === 'left' || direction === 'right';
+        const animationBase = isSideView ? 'left' : direction;
         
-        if (direction === 'right') {
-            this.sprite.setFlipX(false);
-            spriteKey = `${config.spriteBase}-side`;
-            animationKey = `${config.animBase}-left`;
-        } else {
-            this.sprite.setFlipX(false);
-            if (direction === 'left') {
-                spriteKey = `${config.spriteBase}-side`;
-                animationKey = `${config.animBase}-${direction}`;
-            } else {
-                spriteKey = `${config.spriteBase}-${direction}`;
-                animationKey = `${config.animBase}-${direction}`;
-            }
-        }
+        // Set sprite configuration
+        const spriteKey = `${config.spriteBase}-${isSideView ? 'side' : direction}`;
+        const animationKey = `${config.animBase}-${animationBase}`;
+
+        // Handle sprite flipping
+        this.sprite.setFlipX(direction === 'left');
 
         // Only change animation if it's different
         if (this.sprite.anims.getName() !== animationKey) {
