@@ -1,0 +1,12 @@
+{
+    "name": "dungeon-crawler",
+    "version": "1.0.0",
+    "description": "A simple 2D dungeon crawler game using Phaser.js",
+    "type": "module",
+    "scripts": {
+        "start": "npx http-server . -c-1"
+    },
+    "dependencies": {
+        "http-server": "^14.1.1"
+    }
+} 
