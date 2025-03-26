@@ -4,9 +4,33 @@
     "description": "A simple 2D dungeon crawler game using Phaser.js",
     "type": "module",
     "scripts": {
-        "start": "npx http-server . -c-1"
+        "start": "vite preview",
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "lint": "eslint src --ext .ts",
+        "lint:fix": "eslint src --ext .ts --fix",
+        "format": "prettier --write \"src/**/*.ts\"",
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+        "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+        "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+        "check": "npm run lint && npm run test && npm run build"
     },
     "dependencies": {
-        "http-server": "^14.1.1"
+        "http-server": "^14.1.1",
+        "phaser": "^3.60.0"
+    },
+    "devDependencies": {
+        "@types/jest": "^29.5.14",
+        "@typescript-eslint/eslint-plugin": "^7.2.0",
+        "@typescript-eslint/parser": "^7.2.0",
+        "@vitejs/plugin-legacy": "^6.0.2",
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "jest": "^29.7.0",
+        "jest-environment-jsdom": "^29.7.0",
+        "prettier": "^3.2.5",
+        "ts-jest": "^29.3.0",
+        "typescript": "^5.4.2",
+        "vite": "^6.2.3"
     }
-} 
+}
