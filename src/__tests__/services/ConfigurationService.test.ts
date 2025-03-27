@@ -5,14 +5,7 @@ import { ConfigurationService } from '../../services/ConfigurationService';
 import { ConfigurationError, ConfigurationParseError } from '../../utils/errors';
 import { fsMock } from '../mocks/fs';
 
-// Mock file system module using our dedicated mock
-jest.mock('fs', () => {
-  return {
-    promises: {
-      readFile: fsMock.mockFunctions.readFile,
-    },
-  };
-});
+// We don't need to mock fs here as it's already mocked in the fs.ts mock file
 
 describe('ConfigurationService', () => {
   let configService: ConfigurationService;
@@ -20,6 +13,7 @@ describe('ConfigurationService', () => {
   beforeEach(() => {
     configService = new ConfigurationService();
     fsMock.clearFiles();
+    jest.clearAllMocks();
   });
 
   describe('Core Functionality', () => {
@@ -126,10 +120,12 @@ describe('ConfigurationService', () => {
     });
 
     test('should handle missing configuration file', async () => {
+      // Arrange - ensure no files are set up
+      fsMock.clearFiles();
+
       // Act & Assert
-      await expect(configService.loadConfiguration('dev')).rejects.toThrow(
-        /ENOENT: no such file or directory/
-      );
+      // The mock will throw an ENOENT error which should be converted to a ConfigurationError
+      await expect(configService.loadConfiguration('dev')).rejects.toThrow(/Configuration file not found/);
       await expect(configService.loadConfiguration('dev')).rejects.toThrow(ConfigurationError);
     });
 
@@ -138,9 +134,7 @@ describe('ConfigurationService', () => {
       fsMock.setFileContent('config.dev.json', 'invalid json');
 
       // Act & Assert
-      await expect(configService.loadConfiguration('dev')).rejects.toThrow(
-        /Failed to parse configuration file/
-      );
+      await expect(configService.loadConfiguration('dev')).rejects.toThrow(/Failed to parse configuration file/);
       await expect(configService.loadConfiguration('dev')).rejects.toThrow(ConfigurationParseError);
     });
   });
