@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { Player, Direction } from '../../models/Player';
 import { Actions } from '../../models/Actions';
 
@@ -35,7 +34,7 @@ describe('Player', () => {
     player.toggleWalking();
     expect(player.isWalkingMode()).toBe(true);
     expect(player.getSpeed()).toBeLessThan(initialSpeed);
-    
+
     player.toggleWalking();
     expect(player.isWalkingMode()).toBe(false);
     expect(player.getSpeed()).toBe(initialSpeed);
@@ -53,4 +52,4 @@ describe('Player', () => {
     expect(status.direction).toBe('down');
     expect(status.action).toBe(Actions.IDLE);
   });
-}); 
+});

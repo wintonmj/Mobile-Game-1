@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import { InputController } from './InputController';
 import { Player } from '../models/Player';
 import { Dungeon } from '../models/Dungeon';
@@ -15,9 +15,9 @@ interface GameScene extends Phaser.Scene {
 
 export class GameController {
   private scene: GameScene;
-  private player: Player;
+  public player: Player;
   private inputController: InputController;
-  private dungeon: Dungeon;
+  public dungeon: Dungeon;
   private lastUpdate: number;
 
   constructor(scene: GameScene, dungeon?: Dungeon) {
@@ -33,10 +33,7 @@ export class GameController {
     // Place player at a valid starting position
     const tileSize = this.dungeon.tileSize;
     // Start player at position (2, 2) in tiles
-    this.player.setPosition(
-      2 * tileSize + tileSize / 2,
-      2 * tileSize + tileSize / 2
-    );
+    this.player.setPosition(2 * tileSize + tileSize / 2, 2 * tileSize + tileSize / 2);
 
     // Set up animation completion callback
     if (this.scene.playerView) {
@@ -62,7 +59,7 @@ export class GameController {
 
     // Handle all possible actions first
     this._handleActions();
-    
+
     // Only handle movement if in an interruptible state
     if (isInterruptibleAction) {
       this._handleMovement();
@@ -115,8 +112,10 @@ export class GameController {
       // Set appropriate movement action based on whether player is running or walking
       const isRunning = this.inputController.isRunning();
       this.player.setAction(isRunning ? Actions.MOVING : Actions.WALKING);
-    } else if (this.player.getCurrentAction() === Actions.MOVING || 
-               this.player.getCurrentAction() === Actions.WALKING) {
+    } else if (
+      this.player.getCurrentAction() === Actions.MOVING ||
+      this.player.getCurrentAction() === Actions.WALKING
+    ) {
       // Only set to IDLE if we're currently in a movement state
       // This prevents overriding action states that might have been set in _handleActions
       this.player.setAction(Actions.IDLE);

@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { Dungeon, TileType } from '../../models/Dungeon';
+import { Dungeon } from '../../models/Dungeon';
 
 describe('Dungeon', () => {
   let dungeon: Dungeon;
@@ -45,7 +45,7 @@ describe('Dungeon', () => {
       // Make inner tiles walls (1)
       return 1;
     });
-    
+
     // Check inner tiles are all walls
     for (let y = 1; y < 9; y++) {
       for (let x = 1; x < 9; x++) {
@@ -63,7 +63,7 @@ describe('Dungeon', () => {
       // Make inner tiles floors (0)
       return 0;
     });
-    
+
     // Check inner tiles are all floors
     for (let y = 1; y < 9; y++) {
       for (let x = 1; x < 9; x++) {
@@ -75,7 +75,7 @@ describe('Dungeon', () => {
   it('should correctly identify walkable tiles', () => {
     // Walls should not be walkable
     expect(dungeon.isWalkable(0, 0)).toBe(false);
-    
+
     // Mock a floor tile and check walkability
     jest.spyOn(dungeon, 'getTileAt').mockReturnValue(0);
     expect(dungeon.isWalkable(5, 5)).toBe(true);
@@ -87,4 +87,4 @@ describe('Dungeon', () => {
     expect(dungeon.getTileAt(10, 5)).toBe(1);
     expect(dungeon.getTileAt(5, 10)).toBe(1);
   });
-}); 
+});

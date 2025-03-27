@@ -9,7 +9,7 @@ const MockPhaser = {
     },
     loop: {
       delta: 16, // ~60fps
-    }
+    },
   })),
   Scene: jest.fn().mockImplementation(() => ({
     add: {
@@ -46,7 +46,7 @@ const MockPhaser = {
           left: { isDown: false },
           right: { isDown: false },
           shift: { isDown: false },
-          space: { isDown: false }
+          space: { isDown: false },
         }),
         addKeys: jest.fn().mockReturnValue({
           w: { isDown: false },
@@ -54,9 +54,9 @@ const MockPhaser = {
           s: { isDown: false },
           d: { isDown: false },
           shift: { isDown: false },
-          space: { isDown: false }
+          space: { isDown: false },
         }),
-      }
+      },
     },
     time: {
       addEvent: jest.fn().mockReturnValue({
@@ -104,11 +104,24 @@ const MockPhaser = {
   Input: {
     Keyboard: {
       KeyCodes: {
-        W: 87, A: 65, S: 83, D: 68,
-        UP: 38, LEFT: 37, DOWN: 40, RIGHT: 39,
-        SHIFT: 16, SPACE: 32,
-        ONE: 49, TWO: 50, THREE: 51, FOUR: 52, FIVE: 53, SIX: 54,
-        E: 69, R: 82,
+        W: 87,
+        A: 65,
+        S: 83,
+        D: 68,
+        UP: 38,
+        LEFT: 37,
+        DOWN: 40,
+        RIGHT: 39,
+        SHIFT: 16,
+        SPACE: 32,
+        ONE: 49,
+        TWO: 50,
+        THREE: 51,
+        FOUR: 52,
+        FIVE: 53,
+        SIX: 54,
+        E: 69,
+        R: 82,
       },
       Key: jest.fn().mockImplementation(() => ({
         isDown: false,
@@ -136,4 +149,4 @@ const MockPhaser = {
   CANVAS: 'CANVAS',
 };
 
-export default MockPhaser; 
+export default MockPhaser;

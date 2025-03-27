@@ -19,7 +19,7 @@ const mockInstance = {
   getMovementDirection: mockFunctions.getMovementDirection,
   isMoving: mockFunctions.isMoving,
   isRunning: mockFunctions.isRunning,
-  isActionPressed: mockFunctions.isActionPressed
+  isActionPressed: mockFunctions.isActionPressed,
 };
 
 // Export the InputController class mock - use a singleton pattern to ensure all tests reference the same mock
@@ -29,5 +29,5 @@ export const InputController = jest.fn().mockImplementation(() => {
 
 // Export default object with mockFunctions for test access
 export default {
-  mockFunctions
-}; 
+  mockFunctions,
+};

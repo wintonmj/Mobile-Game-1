@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import { Dungeon, TileType } from '../models/Dungeon';
 
 export class DungeonView {
@@ -23,7 +23,7 @@ export class DungeonView {
 
     // Draw grid lines
     this.tileGraphics.lineStyle(1, 0x333333, 0.5);
-    
+
     // Draw horizontal lines
     for (let y = 0; y <= height; y++) {
       this.tileGraphics.beginPath();
@@ -32,7 +32,7 @@ export class DungeonView {
       this.tileGraphics.closePath();
       this.tileGraphics.strokePath();
     }
-    
+
     // Draw vertical lines
     for (let x = 0; x <= width; x++) {
       this.tileGraphics.beginPath();
@@ -56,12 +56,14 @@ export class DungeonView {
     const posX = x * tileSize;
     const posY = y * tileSize;
 
-    if (tileType === 1) { // Wall
+    if (tileType === 1) {
+      // Wall
       this.tileGraphics.fillStyle(0x666666);
       this.tileGraphics.fillRect(posX, posY, tileSize, tileSize);
-    } else { // Floor
+    } else {
+      // Floor
       this.tileGraphics.fillStyle(0x444444);
       this.tileGraphics.fillRect(posX, posY, tileSize, tileSize);
     }
   }
-} 
+}

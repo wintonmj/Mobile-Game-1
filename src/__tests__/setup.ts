@@ -14,4 +14,4 @@ beforeEach(() => {
 
 // Disable console errors during tests to keep output clean
 // Uncomment if test output becomes too noisy
-// console.error = jest.fn(); 
+// console.error = jest.fn();

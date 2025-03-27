@@ -7,7 +7,7 @@ import { Actions } from '../../models/Actions';
 export function createMockScene() {
   return {
     game: {
-      loop: { delta: 16 } // 16ms = ~60fps
+      loop: { delta: 16 }, // 16ms = ~60fps
     },
     add: {
       graphics: jest.fn().mockReturnValue({
@@ -43,7 +43,7 @@ export function createMockScene() {
           left: { isDown: false },
           right: { isDown: false },
           shift: { isDown: false },
-          space: { isDown: false }
+          space: { isDown: false },
         }),
         addKeys: jest.fn().mockReturnValue({
           w: { isDown: false },
@@ -59,13 +59,13 @@ export function createMockScene() {
           '5': { isDown: false },
           '6': { isDown: false },
           e: { isDown: false },
-          r: { isDown: false }
-        })
-      }
+          r: { isDown: false },
+        }),
+      },
     },
     updatePlayerSprite: jest.fn(),
     playerView: {
-      onActionComplete: jest.fn()
+      onActionComplete: jest.fn(),
     },
     time: {
       addEvent: jest.fn().mockReturnValue({
@@ -98,7 +98,7 @@ export function createMockPlayer() {
     getStatus: jest.fn().mockReturnValue({
       position: { x: 100, y: 100 },
       direction: 'down',
-      action: Actions.IDLE
+      action: Actions.IDLE,
     }),
   };
 }
@@ -116,4 +116,4 @@ export function createMockInputController() {
     isRunning: jest.fn().mockReturnValue(false),
     isActionPressed: jest.fn().mockReturnValue(false),
   };
-} 
+}

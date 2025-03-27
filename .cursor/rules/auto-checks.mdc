@@ -1,0 +1,25 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ Rule Name: auto-checks.mdc
+Description:
+Automated Code Quality Checks
+This rule enforces running the run_checks() function from run.sh whenever code changes are made.
+The run_checks() function performs the following validations:
+Linting (npm run lint)
+Code formatting (npm run format)
+Unit tests (npm run test)
+TypeScript type checking (tsc --noEmit)
+Build verification (npm run build)
+Dead code detection
+These checks help maintain code quality by ensuring:
+Consistent code style and formatting
+All tests pass
+TypeScript types are valid
+The application builds successfully
+No dead or deprecated code is present
+To manually run checks:
+Execute ./run.sh check to run once
+Execute ./run.sh watch or just ./run.sh to watch for changes

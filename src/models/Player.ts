@@ -87,7 +87,7 @@ export class Player {
   public toggleWalking(): void {
     this.isWalking = !this.isWalking;
     this.speed = this.isWalking ? this.baseSpeed * 0.5 : this.baseSpeed;
-    
+
     // Update current animation based on walking state
     if (this.currentAction === Actions.MOVING || this.currentAction === Actions.CARRY_WALK) {
       this.updateMovementAction();
@@ -164,7 +164,7 @@ export class Player {
   // Toggle carrying state
   public toggleCarrying(): void {
     this.isCarrying = !this.isCarrying;
-    
+
     // Set appropriate action based on current state
     if (this.isCarrying) {
       this.setAction(
@@ -176,7 +176,7 @@ export class Player {
   }
 
   // Combat methods
-  public takeDamage(amount: number): void {
+  public takeDamage(_amount: number): void {
     // To be implemented when health system is added
   }
 

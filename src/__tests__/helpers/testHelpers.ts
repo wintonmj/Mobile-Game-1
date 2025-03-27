@@ -50,21 +50,27 @@ export function createMockDungeon(
   width = 10,
   height = 10,
   tileSize = 32,
-  tilePattern: (x: number, y: number) => TileType = (x, y) => (x + y) % 2 === 0 ? 0 : 1
+  tilePattern: (x: number, y: number) => TileType = (x, y) => ((x + y) % 2 === 0 ? 0 : 1)
 ) {
   return {
     getSize: jest.fn().mockReturnValue({ width: width * tileSize, height: height * tileSize }),
     tileSize,
-    getTileAt: jest.fn((...args: any[]) => {
-      const x = args[0] as number;
-      const y = args[1] as number;
-      return tilePattern(x, y);
-    }),
-    isWalkable: jest.fn((...args: any[]) => {
-      const x = args[0] as number;
-      const y = args[1] as number;
-      return tilePattern(x, y) === 0;
-    }),
+    getTileAt: jest.fn(
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      (...args: any[]) => {
+        const x = args[0] as number;
+        const y = args[1] as number;
+        return tilePattern(x, y);
+      }
+    ),
+    isWalkable: jest.fn(
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      (...args: any[]) => {
+        const x = args[0] as number;
+        const y = args[1] as number;
+        return tilePattern(x, y) === 0;
+      }
+    ),
     width,
     height,
   } as unknown as jest.Mocked<Dungeon>;
@@ -97,7 +103,7 @@ export function createMockPlayer() {
 /**
  * Creates a mock InputController for testing
  */
-export function createMockInputController(scene: any, player: any) {
+export function createMockInputController(_scene: Phaser.Scene, _player: Player) {
   return {
     init: jest.fn(),
     update: jest.fn(),
@@ -114,5 +120,6 @@ export function createMockInputController(scene: any, player: any) {
  */
 export function setupPhaserMocks() {
   // Use our dedicated Phaser mock instead of creating one inline
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   jest.mock('phaser', () => require('../mocks/phaser').default);
-} 
+}
