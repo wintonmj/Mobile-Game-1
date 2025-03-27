@@ -16,7 +16,7 @@ interface GameScene extends Phaser.Scene {
 export class GameController {
   private scene: GameScene;
   public player: Player;
-  private inputController: InputController;
+  public inputController: InputController;
   public dungeon: Dungeon;
   private lastUpdate: number;
 
@@ -45,7 +45,9 @@ export class GameController {
 
   public update(): void {
     // Update input state
-    this.inputController.update();
+    if (this.inputController) {
+      this.inputController.update();
+    }
 
     // Get current action to determine if we can move
     const currentAction = this.player.getCurrentAction();
@@ -111,14 +113,28 @@ export class GameController {
     if (isMoving) {
       // Set appropriate movement action based on whether player is running or walking
       const isRunning = this.inputController.isRunning();
-      this.player.setAction(isRunning ? Actions.MOVING : Actions.WALKING);
+      const isCarrying = this.player.carrying;
+
+      if (isCarrying) {
+        // Use carrying actions
+        this.player.setAction(isRunning ? Actions.CARRY_RUN : Actions.CARRY_WALK);
+      } else {
+        // Use normal movement actions
+        this.player.setAction(isRunning ? Actions.MOVING : Actions.WALKING);
+      }
     } else if (
       this.player.getCurrentAction() === Actions.MOVING ||
-      this.player.getCurrentAction() === Actions.WALKING
+      this.player.getCurrentAction() === Actions.WALKING ||
+      this.player.getCurrentAction() === Actions.CARRY_WALK ||
+      this.player.getCurrentAction() === Actions.CARRY_RUN
     ) {
       // Only set to IDLE if we're currently in a movement state
       // This prevents overriding action states that might have been set in _handleActions
-      this.player.setAction(Actions.IDLE);
+      if (this.player.carrying) {
+        this.player.setAction(Actions.CARRY_IDLE);
+      } else {
+        this.player.setAction(Actions.IDLE);
+      }
     }
 
     // Try moving horizontally

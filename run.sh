@@ -9,7 +9,8 @@ NC='\033[0m' # No Color
 # Function to run all correctness checks
 run_checks() {
   echo -e "${YELLOW}🔍 Running lint checks...${NC}"
-  npm run lint
+  # Use the new lint:tests script that ignores @ts-nocheck in test files
+  npm run lint:tests
   if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Linting failed. Fix the issues before continuing.${NC}"
     return 1

@@ -7,7 +7,10 @@ export default {
     '^../controllers/InputController$': '<rootDir>/src/__tests__/mocks/inputController.ts',
     '^./InputController$': '<rootDir>/src/__tests__/mocks/inputController.ts',
     '^controllers/InputController$': '<rootDir>/src/__tests__/mocks/inputController.ts',
-    '^src/controllers/InputController$': '<rootDir>/src/__tests__/mocks/inputController.ts'
+    '^src/controllers/InputController$': '<rootDir>/src/__tests__/mocks/inputController.ts',
+    '^../../controllers/GameController$': '<rootDir>/src/__tests__/mocks/gameController.ts',
+    '^../controllers/GameController$': '<rootDir>/src/__tests__/mocks/gameController.ts',
+    '^./GameController$': '<rootDir>/src/__tests__/mocks/gameController.ts'
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {

@@ -1,33 +1,38 @@
 import { jest } from '@jest/globals';
+import { Actions } from '../../models/Actions';
+import { Player, Direction } from '../../models/Player';
 
-// Create a simple mock object without complex typing
-const mockFunctions = {
+// Define interfaces for the mock
+interface Vector2 {
+  x: number;
+  y: number;
+}
+
+// Create mock functions with proper types
+export const mockFunctions = {
   init: jest.fn(),
   update: jest.fn(),
-  getMovementVector: jest.fn().mockReturnValue({ x: 0, y: 0 }),
-  getMovementDirection: jest.fn().mockReturnValue(null),
   isMoving: jest.fn().mockReturnValue(false),
   isRunning: jest.fn().mockReturnValue(false),
+  getMovementVector: jest.fn().mockReturnValue({ x: 0, y: 0 }),
+  getMovementDirection: jest.fn().mockReturnValue(null),
   isActionPressed: jest.fn().mockReturnValue(false),
 };
 
-// Create a constructor that returns a singleton to ensure all instances share the same mock functions
-const mockInstance = {
-  init: mockFunctions.init,
-  update: mockFunctions.update,
-  getMovementVector: mockFunctions.getMovementVector,
-  getMovementDirection: mockFunctions.getMovementDirection,
-  isMoving: mockFunctions.isMoving,
-  isRunning: mockFunctions.isRunning,
-  isActionPressed: mockFunctions.isActionPressed,
-};
-
-// Export the InputController class mock - use a singleton pattern to ensure all tests reference the same mock
-export const InputController = jest.fn().mockImplementation(() => {
-  return mockInstance;
+// Use this class-like structure to better match the actual implementation
+const InputControllerMock = jest.fn().mockImplementation((scene, player) => {
+  return {
+    init: mockFunctions.init,
+    update: mockFunctions.update,
+    isMoving: mockFunctions.isMoving,
+    isRunning: mockFunctions.isRunning,
+    getMovementVector: mockFunctions.getMovementVector,
+    getMovementDirection: mockFunctions.getMovementDirection,
+    isActionPressed: mockFunctions.isActionPressed,
+    scene,
+    player,
+  };
 });
 
-// Export default object with mockFunctions for test access
-export default {
-  mockFunctions,
-};
+export { InputControllerMock as InputController };
+export default { mockFunctions, InputController: InputControllerMock };

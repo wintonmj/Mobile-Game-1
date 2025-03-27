@@ -1,0 +1,120 @@
+---
+description: 
+globs: **/src/__tests__/**/*.ts
+alwaysApply: false
+---
+ # Scene Testing Patterns
+
+## Core Testing Patterns
+
+### 1. Helper Functions for Mock Creation
+- Create reusable helper functions for common mocks like scenes and game objects
+- Example: `createMockScene()`, `createMockPlayer()`
+- Store these in a shared test utilities file (`testUtils.ts`)
+
+```typescript
+// Example from helpers/testUtils.ts
+export function createMockScene() {
+  return {
+    updatePlayerSprite: jest.fn(),
+    playerView: {
+      onActionComplete: null
+    },
+    // Other scene properties and methods
+  };
+}
+```
+
+### 2. Module-Level Mocking
+- Use Jest's moduleNameMapper in jest.config.js for external dependencies
+- Use singleton pattern for controller mocks:
+
+```typescript
+// In mock file (e.g., inputController.ts)
+const mockFunctions = {
+  init: jest.fn(),
+  isMoving: jest.fn(),
+  getMovementVector: jest.fn(),
+  isActionPressed: jest.fn()
+};
+
+const mockInstance = {
+  init: mockFunctions.init,
+  isMoving: mockFunctions.isMoving,
+  getMovementVector: mockFunctions.getMovementVector,
+  isActionPressed: mockFunctions.isActionPressed
+};
+
+export const InputController = jest.fn().mockImplementation(() => mockInstance);
+export default { mockFunctions };
+
+// In test file:
+import mockInputController from '../mocks/inputController';
+const mockInputControllerFunctions = mockInputController.mockFunctions;
+```
+
+### 3. Spy With Implementation Replacement
+- Use spyOn with mockImplementation to replace methods with controlled behavior
+- Apply mocks to prototype methods for classes instantiated in tests
+
+```typescript
+jest.spyOn(Player.prototype, 'setPosition').mockImplementation(mockPlayer.setPosition);
+jest.spyOn(SceneObject.prototype, 'method').mockImplementation(mockImpl);
+```
+
+### 4. Test Isolation
+- Clear mocks before each test: `jest.clearAllMocks()`
+- Restore all mocks after each test: `jest.restoreAllMocks()`
+- Reset mock implementations between tests that need different behaviors
+
+### 5. Conditional Mock Implementations
+- Create mock functions that return different values based on input parameters
+- Explicitly define the behavior for specific test cases:
+
+```typescript
+mockInputControllerFunctions.isActionPressed.mockImplementation((action) => {
+  return action === Actions.SPECIFIC_ACTION;
+});
+```
+
+### 6. Component Interaction Testing
+- Test that scene methods correctly interact with controllers and models
+- Verify view updates happen in response to model changes
+- Test state transitions based on different input conditions
+
+## Example Test Structure
+
+```typescript
+describe('SceneName', () => {
+  let mockScene;
+  let mockController;
+  let scene; // The actual scene under test
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockScene = createMockScene();
+    mockController = createMockController();
+    
+    // Setup required spies
+    jest.spyOn(ControllerClass.prototype, 'method').mockImplementation(mockImpl);
+    
+    // Create scene instance
+    scene = new SceneName();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should test specific behavior', () => {
+    // Arrange - setup specific test conditions
+    mockController.method.mockReturnValue(expectedValue);
+    
+    // Act - call the method being tested
+    scene.update();
+    
+    // Assert - verify the expected outcome
+    expect(mockScene.updateSprite).toHaveBeenCalled();
+  });
+});
+``` 

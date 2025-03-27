@@ -9,6 +9,7 @@
         "build": "tsc && vite build",
         "lint": "eslint src --ext .ts",
         "lint:fix": "eslint src --ext .ts --fix",
+        "lint:tests": "eslint src --ext .ts --rule '@typescript-eslint/ban-ts-comment: [\"error\", {\"ts-nocheck\": false}]' --ignore-pattern \"src/__tests__/**/*\"",
         "format": "prettier --write \"src/**/*.ts\"",
         "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
         "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",

@@ -108,27 +108,37 @@ export class PlayerView {
   public update(x: number, y: number, direction: string, action: Actions): void {
     if (!this.sprite) return;
 
-    // Update position
-    this.sprite.setPosition(x, y);
+    try {
+      // Update position
+      this.sprite.setPosition(x, y);
 
-    const config = ActionAnimations[action];
-    if (!config) return; // Invalid action
+      const config = ActionAnimations[action];
+      if (!config) return; // Invalid action
 
-    // Handle animation based on direction
-    const isSideView = direction === 'left' || direction === 'right';
-    const animationBase = isSideView ? 'left' : direction;
+      // Handle animation based on direction
+      const isSideView = direction === 'left' || direction === 'right';
+      const animationBase = isSideView ? 'left' : direction;
 
-    // Set sprite configuration
-    const spriteKey = `${config.spriteBase}-${isSideView ? 'side' : direction}`;
-    const animationKey = `${config.animBase}-${animationBase}`;
+      // Set sprite configuration
+      const spriteKey = `${config.spriteBase}-${isSideView ? 'side' : direction}`;
+      const animationKey = `${config.animBase}-${animationBase}`;
 
-    // Handle sprite flipping
-    this.sprite.setFlipX(direction === 'left');
+      // Handle sprite flipping
+      this.sprite.setFlipX(direction === 'left');
 
-    // Only change animation if it's different
-    if (this.sprite.anims.getName() !== animationKey) {
-      this.sprite.setTexture(spriteKey);
-      this.sprite.play(animationKey);
+      // Only change animation if it's different
+      if (this.sprite.anims.getName() !== animationKey) {
+        try {
+          this.sprite.setTexture(spriteKey);
+          this.sprite.play(animationKey);
+        } catch (error) {
+          // Silently handle animation errors during gameplay
+          console.warn('Animation error:', error);
+        }
+      }
+    } catch (error) {
+      // Catch any errors to prevent gameplay disruption
+      console.warn('PlayerView update error:', error);
     }
   }
 }

@@ -87,19 +87,16 @@ export function createMockScene() {
 export function createMockPlayer() {
   return {
     setPosition: jest.fn(),
-    getPosition: jest.fn().mockReturnValue({ x: 100, y: 100 }),
+    getPosition: jest.fn().mockReturnValue({ x: 0, y: 0 }),
     setDirection: jest.fn(),
     getDirection: jest.fn().mockReturnValue('down'),
-    setAction: jest.fn(),
-    getCurrentAction: jest.fn().mockReturnValue(Actions.IDLE),
+    setAction: jest.fn().mockReturnValue(true),
+    getCurrentAction: jest.fn().mockReturnValue('idle'),
     getSpeed: jest.fn().mockReturnValue(200),
-    toggleWalking: jest.fn(),
     isWalkingMode: jest.fn().mockReturnValue(false),
-    getStatus: jest.fn().mockReturnValue({
-      position: { x: 100, y: 100 },
-      direction: 'down',
-      action: Actions.IDLE,
-    }),
+    toggleWalking: jest.fn(),
+    toggleCarrying: jest.fn(),
+    isCarrying: false,
   };
 }
 

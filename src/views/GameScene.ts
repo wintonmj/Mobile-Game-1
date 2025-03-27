@@ -1,7 +1,6 @@
 import { GameController } from '../controllers/GameController';
 import { Player } from '../models/Player';
 import { PlayerView } from './PlayerView';
-import { Actions } from '../models/Actions';
 
 // Create a more specific type for our scene objects
 interface GameObject {
@@ -49,7 +48,7 @@ export class GameScene {
     this.load.on('error', (err: Error) => {
       console.error('Load error:', err);
     });
-    
+
     // Preload player assets
     if (this.playerView) {
       this.playerView.preload();
@@ -85,11 +84,11 @@ export class GameScene {
 
     // Create player at initial position
     const { x, y } = this.controller.player.getPosition();
-    
+
     // Create player sprite using PlayerView
     if (this.playerView) {
       this.playerSprite = this.playerView.create(x, y);
-      
+
       // Set up camera to follow player
       this.cameras.main.startFollow(this.playerSprite);
       this.cameras.main.setZoom(1);

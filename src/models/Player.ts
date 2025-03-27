@@ -175,6 +175,11 @@ export class Player {
     }
   }
 
+  // Getter for carrying state
+  public get carrying(): boolean {
+    return this.isCarrying;
+  }
+
   // Combat methods
   public takeDamage(_amount: number): void {
     // To be implemented when health system is added
