@@ -60,13 +60,13 @@ export class GameController {
       currentAction === Actions.CARRY_WALK ||
       currentAction === Actions.CARRY_RUN;
 
+    // Handle all possible actions first
+    this._handleActions();
+    
     // Only handle movement if in an interruptible state
     if (isInterruptibleAction) {
       this._handleMovement();
     }
-
-    // Handle all possible actions
-    this._handleActions();
 
     // Update the view
     this.scene.updatePlayerSprite(this.player);
@@ -115,8 +115,10 @@ export class GameController {
       // Set appropriate movement action based on whether player is running or walking
       const isRunning = this.inputController.isRunning();
       this.player.setAction(isRunning ? Actions.MOVING : Actions.WALKING);
-    } else {
-      // Set idle action
+    } else if (this.player.getCurrentAction() === Actions.MOVING || 
+               this.player.getCurrentAction() === Actions.WALKING) {
+      // Only set to IDLE if we're currently in a movement state
+      // This prevents overriding action states that might have been set in _handleActions
       this.player.setAction(Actions.IDLE);
     }
 

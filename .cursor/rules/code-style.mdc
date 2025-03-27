@@ -1,6 +1,20 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
- 
+ Code Style Guidelines
+Use single quotes for strings
+Use 2 spaces for indentation
+Maximum line length of 100 characters
+Always use semicolons
+Use camelCase for variables, functions, and method names
+Use PascalCase for classes, interfaces, and type names
+Use UPPER_SNAKE_CASE for constants
+Group imports by type (standard library, third-party, local)
+Prefer arrow functions for anonymous functions
+Avoid files longer than 300 lines (refactor if necessary)
+Always add access modifiers (public, private, protected) to class members
+Use async/await instead of raw promises
+Add meaningful comments for complex logic
+Write descriptive variable and function names

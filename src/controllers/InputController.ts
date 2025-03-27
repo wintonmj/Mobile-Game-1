@@ -131,23 +131,23 @@ export class InputController {
 
     this.inputState.movement.vector = { x, y };
 
-    // Update action states
-    this.inputState.actions[Actions.COLLECTING] = this.keys.collect.isDown;
-    this.inputState.actions[Actions.CUTTING] = this.keys.cut.isDown;
-    this.inputState.actions[Actions.MINING] = this.keys.mine.isDown;
-    this.inputState.actions[Actions.FISHING] = this.keys.fish.isDown;
-    this.inputState.actions[Actions.WATERING] = this.keys.water.isDown;
-    this.inputState.actions[Actions.PIERCING] = this.keys.pierce.isDown;
-    this.inputState.actions[Actions.HIT] = this.keys.hit.isDown;
-    this.inputState.actions[Actions.DEATH] = this.keys.death.isDown;
+    // Update action states - add safety checks for each key
+    this.inputState.actions[Actions.COLLECTING] = this.keys.collect && this.keys.collect.isDown || false;
+    this.inputState.actions[Actions.CUTTING] = this.keys.cut && this.keys.cut.isDown || false;
+    this.inputState.actions[Actions.MINING] = this.keys.mine && this.keys.mine.isDown || false;
+    this.inputState.actions[Actions.FISHING] = this.keys.fish && this.keys.fish.isDown || false;
+    this.inputState.actions[Actions.WATERING] = this.keys.water && this.keys.water.isDown || false;
+    this.inputState.actions[Actions.PIERCING] = this.keys.pierce && this.keys.pierce.isDown || false;
+    this.inputState.actions[Actions.HIT] = this.keys.hit && this.keys.hit.isDown || false;
+    this.inputState.actions[Actions.DEATH] = this.keys.death && this.keys.death.isDown || false;
 
-    // Check for carry toggle
-    if (Phaser.Input.Keyboard.JustDown(this.keys.carry)) {
+    // Check for carry toggle - add safety check
+    if (this.keys.carry && Phaser.Input.Keyboard.JustDown(this.keys.carry)) {
       this.player.toggleCarrying();
     }
 
-    // Check for walk toggle
-    if (Phaser.Input.Keyboard.JustDown(this.keys.walk)) {
+    // Check for walk toggle - add safety check
+    if (this.keys.walk && Phaser.Input.Keyboard.JustDown(this.keys.walk)) {
       this.player.toggleWalking();
     }
   }

@@ -1,0 +1,78 @@
+---
+description: 
+globs: **/src/__tests__/**/*.ts
+alwaysApply: false
+---
+ # Jest Mocking Best Practices
+
+## Singleton Pattern for Controller Mocks
+
+Always use a singleton pattern when mocking controllers or services that may be instantiated multiple times but should share the same mock functions:
+
+```typescript
+// DON'T:
+export const Controller = jest.fn().mockImplementation(() => {
+  return {
+    method1: jest.fn(),
+    method2: jest.fn()
+  };
+});
+
+// DO:
+const mockFunctions = {
+  method1: jest.fn(),
+  method2: jest.fn()
+};
+
+const mockInstance = {
+  method1: mockFunctions.method1,
+  method2: mockFunctions.method2
+};
+
+export const Controller = jest.fn().mockImplementation(() => {
+  return mockInstance;
+});
+
+export default { mockFunctions };
+```
+
+## Jest Module Mapping
+
+Ensure your moduleNameMapper in jest.config.js covers all possible import paths:
+
+```javascript
+moduleNameMapper: {
+  '^../../controllers/MyController$': '<rootDir>/src/__tests__/mocks/myController.ts',
+  '^../controllers/MyController$': '<rootDir>/src/__tests__/mocks/myController.ts',
+  '^./MyController$': '<rootDir>/src/__tests__/mocks/myController.ts',
+}
+```
+
+## Testing Mock Calls
+
+When testing that mock functions were called:
+
+1. Clear mock calls before key operations:
+```typescript
+mockFunctions.method.mockClear();
+controller.performAction();
+expect(mockFunctions.method).toHaveBeenCalled();
+```
+
+2. Be specific when testing conditional actions:
+```typescript
+mockFunctions.isActionPressed.mockImplementation((action) => {
+  // Be explicit about which action returns true
+  return action === Actions.SPECIFIC_ACTION;
+});
+```
+
+## Common Pitfalls
+
+- **Class Instantiation**: If a class creates new instances of other classes in its constructor, make sure those dependencies are mocked BEFORE the class is instantiated.
+
+- **Mock References**: Always access mock functions through your exported mockFunctions object, not through the class instance or prototype.
+
+- **Test Isolation**: Use `jest.clearAllMocks()` in beforeEach to prevent test interference.
+
+- **Conditional Logic**: When mocking methods that participate in conditional logic (like isActionPressed), make sure your mock implementation matches the expected conditions.
