@@ -87,4 +87,64 @@ describe('Dungeon', () => {
     expect(dungeon.getTileAt(10, 5)).toBe(1);
     expect(dungeon.getTileAt(5, 10)).toBe(1);
   });
+
+  it('should always make player starting position (2,2) walkable', () => {
+    // Test with a fresh dungeon
+    const testDungeon = new Dungeon();
+    
+    // Check that tile at position (2,2) is walkable
+    expect(testDungeon.getTileAt(2, 2)).toBe(0);
+    expect(testDungeon.isWalkable(2, 2)).toBe(true);
+    
+    // Even with manipulated Math.random that would normally make walls
+    const originalRandom = Math.random;
+    try {
+      Math.random = jest.fn(() => 0.1) as () => number; // Return value < 0.15 to create walls
+      const wallHeavyDungeon = new Dungeon();
+      
+      // Player start position should still be walkable
+      expect(wallHeavyDungeon.getTileAt(2, 2)).toBe(0);
+      expect(wallHeavyDungeon.isWalkable(2, 2)).toBe(true);
+    } finally {
+      Math.random = originalRandom; // Restore original Math.random
+    }
+  });
+
+  it('should make tiles walkable with ensureWalkable method', () => {
+    // Create a dungeon with all walls for inner tiles
+    const testDungeon = new Dungeon();
+    jest.spyOn(testDungeon, 'getTileAt').mockImplementation((x, y) => {
+      return 1; // All tiles are walls initially
+    });
+    
+    // Verify test setup - tile is a wall
+    expect(testDungeon.isWalkable(3, 3)).toBe(false);
+    
+    // Restore original implementation to allow modification of the layout
+    jest.restoreAllMocks();
+    
+    // Use the method to make a tile walkable
+    testDungeon.ensureWalkable(3, 3);
+    
+    // Now the tile should be walkable
+    expect(testDungeon.getTileAt(3, 3)).toBe(0);
+    expect(testDungeon.isWalkable(3, 3)).toBe(true);
+  });
+
+  it('should not modify out-of-bounds tiles with ensureWalkable', () => {
+    // Should not throw errors for out-of-bounds coordinates
+    const testDungeon = new Dungeon(10, 10);
+    
+    // These should not throw errors
+    expect(() => testDungeon.ensureWalkable(-1, 5)).not.toThrow();
+    expect(() => testDungeon.ensureWalkable(5, -1)).not.toThrow();
+    expect(() => testDungeon.ensureWalkable(10, 5)).not.toThrow();
+    expect(() => testDungeon.ensureWalkable(5, 10)).not.toThrow();
+    
+    // Out-of-bounds tiles should still be treated as walls
+    expect(testDungeon.isWalkable(-1, 5)).toBe(false);
+    expect(testDungeon.isWalkable(5, -1)).toBe(false);
+    expect(testDungeon.isWalkable(10, 5)).toBe(false);
+    expect(testDungeon.isWalkable(5, 10)).toBe(false);
+  });
 });

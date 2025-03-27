@@ -32,6 +32,8 @@ export class GameController {
     this.inputController.init();
     // Place player at a valid starting position
     const tileSize = this.dungeon.tileSize;
+    // Ensure player starting position (2, 2) is always walkable
+    this.dungeon.ensureWalkable(2, 2);
     // Start player at position (2, 2) in tiles
     this.player.setPosition(2 * tileSize + tileSize / 2, 2 * tileSize + tileSize / 2);
 

@@ -27,6 +27,9 @@ export class Dungeon {
         // Create walls around the edges
         if (x === 0 || x === this.width - 1 || y === 0 || y === this.height - 1) {
           row.push(1);
+        } else if (x === 2 && y === 2) {
+          // Always ensure player starting position (2,2) is a floor tile
+          row.push(0);
         } else {
           // Add some random walls (15% chance)
           row.push(Math.random() < 0.15 ? 1 : 0);
@@ -53,5 +56,11 @@ export class Dungeon {
       width: this.width * this.tileSize,
       height: this.height * this.tileSize,
     };
+  }
+
+  public ensureWalkable(x: number, y: number): void {
+    if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+      this.layout[y][x] = 0;
+    }
   }
 }
