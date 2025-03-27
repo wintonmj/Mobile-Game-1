@@ -112,15 +112,20 @@ export class ConfigurationService implements Service {
   async loadConfiguration(environment: Environment): Promise<void> {
     this.currentEnvironment = environment;
     const configPath = `config.${environment}.json`;
+    console.log(`Attempting to load configuration from: ${configPath}`);
 
     try {
+      console.log('Before fs.promises.readFile call');
       const configContent = await fs.promises.readFile(configPath, 'utf8');
+      console.log('Successfully read file content:', configContent.substring(0, 50) + '...');
 
       try {
         const config = JSON.parse(configContent);
         // Merge the new configuration with existing config
         this.config = { ...this.config, ...config };
+        console.log('Config parsed and merged successfully');
       } catch (parseError: unknown) {
+        console.log('Parse error:', parseError);
         const errorMessage =
           parseError instanceof Error ? parseError.message : 'Unknown parse error';
         throw new ConfigurationParseError(
@@ -128,6 +133,22 @@ export class ConfigurationService implements Service {
         );
       }
     } catch (error: unknown) {
+      console.log('File read error:', error);
+      console.log('Error type:', typeof error);
+      console.log('Error is Error instance:', error instanceof Error);
+      if (error instanceof Error) {
+        console.log('Error name:', error.name);
+        console.log('Error message:', error.message);
+        console.log('Error has code property:', 'code' in error);
+        if ('code' in error) {
+          console.log('Error code:', (error as any).code);
+        }
+      } else {
+        // Convert non-Error objects to a more usable format
+        error = new Error(String(error));
+        console.log('Converted non-Error to Error:', error);
+      }
+
       // If it's already a ConfigurationError, pass it through
       if (error instanceof ConfigurationError) {
         throw error;

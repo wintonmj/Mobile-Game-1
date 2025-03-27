@@ -7,6 +7,8 @@ import MockPhaser from './mocks/phaser';
 // Import our model-context-protocol helpers
 import { ModelContextTest } from './helpers/modelContextTest';
 
+import { fsMock } from './mocks/fs';
+
 // Mock Phaser for all tests - use ESM compatible syntax
 jest.mock('phaser', () => MockPhaser);
 
@@ -22,8 +24,17 @@ beforeEach(() => {
 afterEach(() => {
   // Clean up model-context-protocol
   ModelContextTest.cleanup();
+  fsMock.restore();
 });
 
 // Disable console errors during tests to keep output clean
 // Uncomment if test output becomes too noisy
 // console.error = jest.fn();
+
+/**
+ * Jest setup file to provide global test lifecycle hooks
+ * 
+ * This file should be referenced in jest.config.js under setupFilesAfterEnv
+ */
+
+// Add any other global test setup here

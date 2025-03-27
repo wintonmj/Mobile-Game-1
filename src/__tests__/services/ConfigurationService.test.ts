@@ -5,8 +5,6 @@ import { ConfigurationService } from '../../services/ConfigurationService';
 import { ConfigurationError, ConfigurationParseError } from '../../utils/errors';
 import { fsMock } from '../mocks/fs';
 
-// We don't need to mock fs here as it's already mocked in the fs.ts mock file
-
 describe('ConfigurationService', () => {
   let configService: ConfigurationService;
 
@@ -14,6 +12,10 @@ describe('ConfigurationService', () => {
     configService = new ConfigurationService();
     fsMock.clearFiles();
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    fsMock.restore();
   });
 
   describe('Core Functionality', () => {
@@ -77,6 +79,12 @@ describe('ConfigurationService', () => {
         maxPlayers: 4,
       },
     };
+    const mockTestConfig = {
+      game: {
+        difficulty: 'medium',
+        maxPlayers: 2,
+      },
+    };
 
     beforeEach(() => {
       // Reset environment before each test
@@ -91,7 +99,7 @@ describe('ConfigurationService', () => {
     test('should detect environment correctly', async () => {
       // Arrange
       process.env.NODE_ENV = 'production';
-      fsMock.setFileContent('config.prod.json', JSON.stringify(mockProdConfig));
+      fsMock.createConfigFile('prod', mockProdConfig);
 
       // Act
       await configService.loadConfiguration('prod');
@@ -108,7 +116,7 @@ describe('ConfigurationService', () => {
 
     test('should load environment-specific configuration', async () => {
       // Arrange
-      fsMock.setFileContent('config.dev.json', JSON.stringify(mockDevConfig));
+      fsMock.createConfigFile('dev', mockDevConfig);
 
       // Act
       await configService.loadConfiguration('dev');
@@ -120,22 +128,50 @@ describe('ConfigurationService', () => {
     });
 
     test('should handle missing configuration file', async () => {
-      // Arrange - ensure no files are set up
-      fsMock.clearFiles();
+      // Arrange - ensure no config file exists
+      fsMock.ensureConfigFileMissing('dev');
 
       // Act & Assert
-      // The mock will throw an ENOENT error which should be converted to a ConfigurationError
       await expect(configService.loadConfiguration('dev')).rejects.toThrow(/Configuration file not found/);
       await expect(configService.loadConfiguration('dev')).rejects.toThrow(ConfigurationError);
     });
 
     test('should handle invalid JSON in configuration file', async () => {
       // Arrange
-      fsMock.setFileContent('config.dev.json', 'invalid json');
+      fsMock.createInvalidConfigFile('dev');
 
       // Act & Assert
       await expect(configService.loadConfiguration('dev')).rejects.toThrow(/Failed to parse configuration file/);
       await expect(configService.loadConfiguration('dev')).rejects.toThrow(ConfigurationParseError);
+    });
+
+    test('should load configuration for multiple environments', async () => {
+      // Arrange
+      fsMock.createConfigFiles({
+        dev: mockDevConfig,
+        test: mockTestConfig,
+        prod: mockProdConfig
+      });
+
+      // Act - Load dev configuration
+      await configService.loadConfiguration('dev');
+      expect(configService.get('game.difficulty')).toBe('easy');
+      
+      // Switch to test environment
+      await configService.loadConfiguration('test');
+      expect(configService.get('game.difficulty')).toBe('medium');
+      
+      // Switch to prod environment
+      await configService.loadConfiguration('prod');
+      expect(configService.get('game.difficulty')).toBe('hard');
+    });
+
+    test('should handle permission errors when accessing configuration files', async () => {
+      // Arrange
+      fsMock.createInaccessibleConfigFile('dev');
+
+      // Act & Assert
+      await expect(configService.loadConfiguration('dev')).rejects.toThrow(ConfigurationError);
     });
   });
 });

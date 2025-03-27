@@ -1,8 +1,13 @@
 import { jest } from '@jest/globals';
+// First import the mock to ensure it's set up
+import { fsMock } from '../mocks/fs';
+// Then import the services
 import { Registry, Service } from '../../services/Registry';
 import { ConfigurationService } from '../../services/ConfigurationService';
 import { ILoggerService } from '../../services/interfaces/ILoggerService';
-import { fsMock } from '../mocks/fs';
+
+// Force requiring the modules to use the mocked version
+jest.mock('fs');
 
 interface TestService extends Service {
   name: string;
@@ -34,7 +39,13 @@ describe('Registry', () => {
     registry = new Registry();
     configService = new ConfigurationService();
     loggerService = new MockLoggerService();
+    // Initialize empty mock filesystem
     fsMock.clearFiles();
+  });
+
+  afterEach(() => {
+    // Restore real filesystem after each test
+    fsMock.restore();
   });
 
   describe('Service Dependencies', () => {
@@ -271,20 +282,50 @@ describe('Registry', () => {
       },
     };
 
+    // Create a spy on the ConfigurationService to intercept loadConfiguration
+    let loadConfigSpy: any;
+
     beforeEach(() => {
       // Reset environment before each test
       process.env.NODE_ENV = originalEnv;
+      
+      // Clear any previous mocks
+      fsMock.clearFiles();
+      
+      // Create the spy
+      loadConfigSpy = jest.spyOn(ConfigurationService.prototype, 'loadConfiguration');
+      
+      // Override loadConfiguration to bypass file system access
+      loadConfigSpy.mockImplementation(async function(this: ConfigurationService, environment: any) {
+        // Update the environment
+        (this as any).currentEnvironment = environment;
+        
+        // Set some mock config data directly
+        (this as any).config = {
+          game: {
+            difficulty: environment === 'prod' ? 'hard' : environment === 'test' ? 'medium' : 'easy',
+            maxPlayers: environment === 'prod' ? 8 : environment === 'test' ? 2 : 4
+          }
+        };
+        
+        console.log(`Mock loadConfiguration called for environment: ${environment}`);
+        console.log(`Mock config set:`, (this as any).config);
+        
+        return Promise.resolve();
+      });
     });
 
     afterEach(() => {
       // Restore environment after each test
       process.env.NODE_ENV = originalEnv;
+      
+      // Restore the original method
+      loadConfigSpy.mockRestore();
     });
 
     test('should initialize services with correct environment', async () => {
       // Arrange
       process.env.NODE_ENV = 'development';
-      fsMock.setFileContent('config.dev.json', JSON.stringify(mockConfig));
       registry.registerService('config', configService);
       registry.registerService('logger', loggerService);
 
@@ -293,12 +334,11 @@ describe('Registry', () => {
 
       // Assert
       expect(configService.getEnvironment()).toBe('dev');
+      expect(loadConfigSpy).toHaveBeenCalledWith('dev');
     });
 
     test('should handle environment changes during runtime', async () => {
       // Arrange
-      fsMock.setFileContent('config.dev.json', JSON.stringify(mockConfig));
-      fsMock.setFileContent('config.prod.json', JSON.stringify(mockConfig));
       registry.registerService('config', configService);
       registry.registerService('logger', loggerService);
       await registry.initialize();
@@ -310,12 +350,11 @@ describe('Registry', () => {
       // Assert
       expect(configService.getEnvironment()).toBe('prod');
       expect(configService.isProduction()).toBe(true);
+      expect(loadConfigSpy).toHaveBeenCalledWith('prod');
     });
 
     test('should maintain service dependencies across environment changes', async () => {
       // Arrange
-      fsMock.setFileContent('config.dev.json', JSON.stringify(mockConfig));
-      fsMock.setFileContent('config.test.json', JSON.stringify(mockConfig));
       registry.registerService('config', configService);
       registry.registerService('logger', loggerService);
       registry.registerDependencies('logger', ['config']);
@@ -328,11 +367,11 @@ describe('Registry', () => {
       // Assert
       expect(registry.getServiceDependencies('logger')).toContain('config');
       expect(configService.getEnvironment()).toBe('test');
+      expect(loadConfigSpy).toHaveBeenCalledWith('test');
     });
 
     test('should handle environment-specific service initialization', async () => {
       // Arrange
-      fsMock.setFileContent('config.prod.json', JSON.stringify(mockConfig));
       const mockInitialize = jest.fn().mockImplementation(async (): Promise<void> => {
         const config = registry.getService<ConfigurationService>('config');
         if (config.isProduction()) {
@@ -361,6 +400,7 @@ describe('Registry', () => {
       // Assert
       expect(mockInitialize).toHaveBeenCalled();
       expect(configService.isProduction()).toBe(true);
+      expect(loadConfigSpy).toHaveBeenCalledWith('prod');
     });
   });
 });
