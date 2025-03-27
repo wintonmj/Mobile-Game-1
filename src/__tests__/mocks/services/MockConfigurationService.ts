@@ -4,11 +4,22 @@ import { Service } from '../../../services/Registry';
 // Define the Environment type locally to avoid import issues
 type Environment = 'dev' | 'test' | 'prod';
 
+// Create proper configuration interface
+interface GameConfig {
+  difficulty: string;
+  maxPlayers: number;
+}
+
+interface AppConfig {
+  game: GameConfig;
+  [key: string]: unknown;
+}
+
 /**
  * Mock implementation of the ConfigurationService
  */
 export class MockConfigurationService implements Service {
-  private mockConfig: Record<string, any> = {
+  private mockConfig: AppConfig = {
     game: {
       difficulty: 'easy',
       maxPlayers: 4,
@@ -22,16 +33,16 @@ export class MockConfigurationService implements Service {
    */
   get<T>(key: string, defaultValue?: T): T {
     const parts = key.split('.');
-    let current: any = this.mockConfig;
+    let current: unknown = this.mockConfig;
 
     for (const part of parts) {
-      if (current === undefined || current === null) {
+      if (current === undefined || current === null || typeof current !== 'object') {
         return defaultValue as T;
       }
-      current = current[part];
+      current = (current as Record<string, unknown>)[part];
     }
 
-    return (current !== undefined ? current : defaultValue) as T;
+    return (current !== undefined ? current as T : defaultValue as T);
   }
 
   /**
@@ -40,13 +51,13 @@ export class MockConfigurationService implements Service {
   set<T>(key: string, value: T): void {
     const parts = key.split('.');
     const lastPart = parts.pop()!;
-    let current = this.mockConfig;
+    let current: Record<string, unknown> = this.mockConfig;
 
     for (const part of parts) {
       if (!(part in current)) {
         current[part] = {};
       }
-      current = current[part];
+      current = current[part] as Record<string, unknown>;
     }
 
     current[lastPart] = value;

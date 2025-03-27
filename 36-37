@@ -1,0 +1,2 @@
+initialize: mockFns.initialize,
+shutdown: mockFns.shutdown, 

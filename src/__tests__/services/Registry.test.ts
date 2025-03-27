@@ -10,33 +10,32 @@ import { MockLoggerService, createMockLoggerService } from '../mocks/services/Mo
 // Then import the services
 import { Registry, Service } from '../../services/Registry';
 
-// Add new factory function for EnvSpecificService
+// Create proper return type for the service
+interface EnvServiceMethods {
+  initialize: () => Promise<void>;
+  shutdown: () => Promise<void>;
+  onRegister: () => void;
+  onUnregister: () => void;
+}
+
+// Add new factory function for EnvSpecificService with improved typing
 interface MockEnvSpecificService extends Service {
   mockFns: {
-    initialize: jest.Mock;
-    shutdown: jest.Mock;
+    initialize: jest.Mock<() => Promise<void>>;
+    shutdown: jest.Mock<() => Promise<void>>;
   };
 }
 
-const createMockEnvSpecificService = (registry: Registry): MockEnvSpecificService => {
+const createMockEnvSpecificService = (registry: Registry): MockEnvSpecificService & EnvServiceMethods => {
+  // Properly type the mock functions using Jest best practices
   const mockFns = {
-    initialize: jest.fn().mockImplementation(async (): Promise<void> => {
-      const config = registry.getService<MockConfigurationService>('config');
-      if (config.isProduction()) {
-        // Production-specific initialization
-        return Promise.resolve();
-      }
-      // Development-specific initialization
-      return Promise.resolve();
-    }),
-    shutdown: jest.fn().mockImplementation(async (): Promise<void> => {
-      return Promise.resolve();
-    }),
+    initialize: jest.fn<() => Promise<void>>().mockImplementation((): Promise<void> => Promise.resolve()),
+    shutdown: jest.fn<() => Promise<void>>().mockImplementation((): Promise<void> => Promise.resolve()),
   };
 
   return {
-    initialize: mockFns.initialize as unknown as () => Promise<void>,
-    shutdown: mockFns.shutdown as unknown as () => Promise<void>,
+    initialize: mockFns.initialize,
+    shutdown: mockFns.shutdown,
     onRegister: () => {},
     onUnregister: () => {},
     mockFns,
