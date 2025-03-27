@@ -3,6 +3,7 @@ import { InputController } from './InputController';
 import { Player } from '../models/Player';
 import { Dungeon } from '../models/Dungeon';
 import { Actions } from '../models/Actions';
+import { ObjectPlacementController } from './ObjectPlacementController';
 
 interface PlayerView {
   onActionComplete: () => void;
@@ -18,24 +19,31 @@ export class GameController {
   public player: Player;
   public inputController: InputController;
   public dungeon: Dungeon;
+  public objectPlacementController: ObjectPlacementController;
   private lastUpdate: number;
 
   constructor(scene: GameScene, dungeon?: Dungeon) {
     this.scene = scene;
     this.player = new Player();
-    this.inputController = new InputController(scene, this.player);
     this.dungeon = dungeon || new Dungeon();
+    this.objectPlacementController = new ObjectPlacementController(this.dungeon);
+    this.inputController = new InputController(scene, this.player);
     this.lastUpdate = 0;
   }
 
   public init(): void {
     this.inputController.init();
-    // Place player at a valid starting position
-    const tileSize = this.dungeon.tileSize;
+
+    // Register player with placement controller
+    this.objectPlacementController.registerObject(this.player);
+
     // Ensure player starting position (2, 2) is always walkable
     this.dungeon.ensureWalkable(2, 2);
-    // Start player at position (2, 2) in tiles
+
+    // Place player at starting position using the placement controller
+    const tileSize = this.dungeon.tileSize;
     this.player.setPosition(2 * tileSize + tileSize / 2, 2 * tileSize + tileSize / 2);
+    this.objectPlacementController.placeObject(this.player);
 
     // Set up animation completion callback
     if (this.scene.playerView) {

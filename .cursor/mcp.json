@@ -1,0 +1,31 @@
+{
+  "servers": [
+    {
+      "name": "Game Development Helper",
+      "description": "Helps with Phaser game development tasks and animation loading",
+      "url": "http://localhost:5174",
+      "tools": [
+        {
+          "name": "optimizeAnimations",
+          "description": "Suggests optimizations for animation loading based on project context"
+        },
+        {
+          "name": "validateGameAssets",
+          "description": "Validates game assets and ensures they are properly loaded"
+        },
+        {
+          "name": "debugAnimationLoader",
+          "description": "Checks animation loading issues and suggests fixes"
+        },
+        {
+          "name": "analyzePerformance",
+          "description": "Identifies performance bottlenecks in the game"
+        },
+        {
+          "name": "logGameState",
+          "description": "Logs the current game state for debugging purposes"
+        }
+      ]
+    }
+  ]
+} 

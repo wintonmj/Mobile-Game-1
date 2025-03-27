@@ -18,6 +18,7 @@ src/
 ├── models/             # Data models and business logic
 ├── views/              # UI components and Phaser scenes
 ├── assets/             # Game assets (sprites, audio, etc.)
+├── types/              # TypeScript type definitions
 └── __tests__/          # Test files
 ```
 
@@ -60,7 +61,10 @@ For a detailed description of project goals and roadmap, see [GOALS.md](GOALS.md
 - `npm run test:watch` - Run tests in watch mode
 - `npm run test:coverage` - Generate test coverage report
 - `npm run check` - Run all checks (lint, test, build)
-- `./check.sh` - Run comprehensive code quality checks
+- `./run.sh` - Watch for changes and run comprehensive checks
+- `./run.sh check` - Run checks once
+- `./run.sh watch` - Watch for changes and run checks
+- `./run.sh run` - Run both game server and MCP server
 
 ## Controls
 
@@ -90,3 +94,34 @@ This project follows the MVC (Model-View-Controller) architecture:
 - **Vite**: Fast development server and bundler
 - **Jest**: Testing framework
 - **ESLint & Prettier**: Code quality tools
+
+## Debugging with MCP
+
+This project includes a Model Context Protocol (MCP) server for advanced debugging of game components.
+
+### MCP Server
+
+The MCP server provides a set of tools that can be used with Cursor AI to debug game issues:
+
+- **optimizeAnimations**: Suggests optimizations for animation loading
+- **validateGameAssets**: Validates game assets and ensures proper loading
+- **debugAnimationLoader**: Checks animation loading issues and suggests fixes
+- **analyzePerformance**: Identifies performance bottlenecks
+- **logGameState**: Logs the current game state for debugging
+
+### Using the MCP Server
+
+1. Start the MCP server:
+   ```
+   ./run.sh run
+   ```
+   This will start both the game server and MCP server. The MCP server runs on port 5174 by default.
+
+2. The MCP configuration is located in `.cursor/mcp.json` and is automatically loaded by Cursor.
+
+3. Use Cursor AI to access MCP tools by asking questions about debugging animation loading or analyzing performance.
+
+4. You can also directly query the MCP server:
+   ```
+   curl -X POST http://localhost:5174/api/mcp -H "Content-Type: application/json" -d '{"tool":"logGameState"}'
+   ```

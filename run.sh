@@ -50,9 +50,40 @@ run_checks() {
   return 0
 }
 
+# Function to run both game server and MCP server
+run_servers() {
+  echo -e "${GREEN}🎮 Starting game server and MCP server...${NC}"
+  echo -e "${YELLOW}Press Ctrl+C to stop both servers${NC}"
+  
+  # Start the game server in the background
+  npm run dev &
+  GAME_PID=$!
+  
+  # Start the MCP server in the background
+  node mcp-server.js &
+  MCP_PID=$!
+  
+  # Trap Ctrl+C to kill both servers
+  trap "kill $GAME_PID $MCP_PID 2>/dev/null" INT
+  
+  # Wait for either process to exit
+  wait $GAME_PID $MCP_PID
+  
+  # Reset the trap
+  trap - INT
+  
+  echo -e "${YELLOW}Servers stopped${NC}"
+}
+
 # Command to just run checks once
 if [ "$1" == "check" ]; then
   run_checks
+  exit $?
+fi
+
+# Command to run both servers
+if [ "$1" == "run" ]; then
+  run_servers
   exit $?
 fi
 
@@ -85,4 +116,5 @@ else
   echo "  ./run.sh        - Watch for changes and run checks"
   echo "  ./run.sh watch  - Watch for changes and run checks"
   echo "  ./run.sh check  - Run checks once"
+  echo "  ./run.sh run    - Run both game server and MCP server"
 fi 

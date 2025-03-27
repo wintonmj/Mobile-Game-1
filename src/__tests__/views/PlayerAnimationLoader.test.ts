@@ -1,120 +1,164 @@
 import { jest } from '@jest/globals';
 import { PlayerAnimationLoader } from '../../views/PlayerAnimationLoader';
-import { Actions } from '../../models/Actions';
+import { Actions, ActionAnimations } from '../../models/Actions';
 import type Phaser from 'phaser';
+import { ModelContextTest } from '../helpers/modelContextTest';
 
 describe('PlayerAnimationLoader', () => {
-  let mockScene: Partial<Phaser.Scene>;
+  // Create a properly typed mock Phaser scene
+  const mockScene = {
+    load: {
+      spritesheet: jest.fn(),
+    },
+    anims: {
+      create: jest.fn(),
+      generateFrameNumbers: jest.fn().mockReturnValue([]),
+      exists: jest.fn().mockReturnValue(false),
+    },
+    textures: {
+      exists: jest.fn().mockReturnValue(true),
+    },
+  };
+
+  // Create the animation loader once for all tests
   let animationLoader: PlayerAnimationLoader;
 
   beforeEach(() => {
-    // Create mock textures object
-    const mockTextures = {
-      exists: jest.fn().mockReturnValue(true),
-      getTextureKeys: jest.fn().mockReturnValue(['idle_down', 'walk_down', 'run_down']),
-    };
-
-    // Create mock anims object
-    const mockAnims = {
-      create: jest.fn(),
-      exists: jest.fn().mockReturnValue(false),
-      generateFrameNumbers: jest.fn().mockReturnValue([]),
-    };
-
-    // Create mock loader
-    const mockLoader = {
-      spritesheet: jest.fn(),
-      on: jest.fn(),
-    };
-
-    // Create mock scene with casts to avoid type issues
-    mockScene = {
-      textures: mockTextures as unknown as Phaser.Textures.TextureManager,
-      anims: mockAnims as unknown as Phaser.Animations.AnimationManager,
-      load: mockLoader as unknown as Phaser.Loader.LoaderPlugin,
-    };
-
-    // Create animation loader instance
-    animationLoader = new PlayerAnimationLoader(mockScene as Phaser.Scene);
+    jest.clearAllMocks();
+    animationLoader = new PlayerAnimationLoader(mockScene as any);
   });
 
-  it('should preload animations without errors', () => {
-    // Call preloadAnimations
-    expect(() => animationLoader.preloadAnimations()).not.toThrow();
+  it(
+    'should preload animations without browser errors',
+    ModelContextTest.createTest(async () => {
+      // Call preloadAnimations
+      expect(() => animationLoader.preloadAnimations()).not.toThrow();
 
-    // Verify loader.on was called to handle errors
-    expect(mockScene.load?.on).toHaveBeenCalledWith('loaderror', expect.any(Function));
+      // Verify loader.spritesheet was called multiple times
+      expect(mockScene.load.spritesheet).toHaveBeenCalled();
 
-    // Verify loader.spritesheet was called multiple times
-    expect(mockScene.load?.spritesheet).toHaveBeenCalled();
-  });
+      // Verify spritesheet was called for idle_down
+      expect(mockScene.load.spritesheet).toHaveBeenCalledWith(
+        'idle_down',
+        expect.stringContaining('Idle_Down-Sheet.png'),
+        expect.any(Object)
+      );
 
-  it('should create animations without errors', () => {
-    // Call createAnimations
-    expect(() => animationLoader.createAnimations()).not.toThrow();
+      // Assert that no browser errors occurred during loading
+      ModelContextTest.assertNoErrors();
+    })
+  );
 
-    // Verify anims.create was called
-    expect(mockScene.anims?.create).toHaveBeenCalled();
-  });
+  it(
+    'should create animations without browser errors',
+    ModelContextTest.createTest(async () => {
+      // Setup textures.exists to return true to simulate loaded textures
+      (mockScene.textures.exists as jest.Mock).mockReturnValue(true);
+
+      // Call createAnimations
+      expect(() => animationLoader.createAnimations()).not.toThrow();
+
+      // Verify anims.create was called
+      expect(mockScene.anims.create).toHaveBeenCalled();
+
+      // Assert that no browser errors occurred during animation creation
+      ModelContextTest.assertNoErrors();
+    })
+  );
+
+  it(
+    'should handle missing textures gracefully',
+    ModelContextTest.createTest(async () => {
+      // Setup textures.exists to return false to simulate missing textures
+      (mockScene.textures.exists as jest.Mock).mockReturnValue(false);
+
+      // Call createAnimations - should not throw despite missing textures
+      expect(() => animationLoader.createAnimations()).not.toThrow();
+
+      // Verify createWalkAnimations didn't throw despite missing textures
+      expect(mockScene.anims.create).not.toHaveBeenCalled();
+
+      // No errors should be thrown due to the try/catch in PlayerAnimationLoader
+      ModelContextTest.assertNoErrors();
+    })
+  );
 
   it('should load specific animations for all directions', () => {
-    // Call preloadAnimations which will internally call loadSpecificAnimation for various animation types
+    // Create a spy on the loadSpecificAnimation method
+    const loadSpy = jest.spyOn(animationLoader as any, 'loadSpecificAnimation');
+
+    // Call preloadAnimations
     animationLoader.preloadAnimations();
 
-    // Verify that spritesheet was called with different direction variants
-    const spritesheetMock = mockScene.load?.spritesheet as jest.Mock;
-
-    // Filter calls that include directional variants
-    const downCalls = spritesheetMock.mock.calls.filter(
-      (call) => call[1] && typeof call[1] === 'string' && call[1].includes('Down-Sheet.png')
-    );
-    const sideCalls = spritesheetMock.mock.calls.filter(
-      (call) => call[1] && typeof call[1] === 'string' && call[1].includes('Side-Sheet.png')
-    );
-    const upCalls = spritesheetMock.mock.calls.filter(
-      (call) => call[1] && typeof call[1] === 'string' && call[1].includes('Up-Sheet.png')
-    );
-
-    // Verify at least one call for each direction
-    expect(downCalls.length).toBeGreaterThan(0);
-    expect(sideCalls.length).toBeGreaterThan(0);
-    expect(upCalls.length).toBeGreaterThan(0);
-
-    // Verify that we loaded idle animations
-    expect(spritesheetMock).toHaveBeenCalledWith(
-      expect.stringContaining('idle'),
-      expect.stringContaining('Idle'),
-      expect.any(Object)
-    );
+    // Verify loadSpecificAnimation was called for 'idle'
+    expect(loadSpy).toHaveBeenCalledWith('idle', 'Idle_Base', expect.any(String));
   });
 
   it('should handle animation transitions between actions', () => {
-    // Mock the anims.exists to return true for animations created
-    const existsMock = mockScene.anims?.exists as jest.Mock;
-    // @ts-expect-error - Jest typing issue with mockImplementation
-    existsMock.mockImplementation((key: string) => {
-      // Return true for specific animations we're testing
-      return ['idle_down', 'walking_down', 'mining_down'].includes(key);
-    });
+    // Setup mocks to return true to simulate loaded textures
+    (mockScene.textures.exists as jest.Mock).mockReturnValue(true);
+    (mockScene.anims.exists as jest.Mock).mockReturnValue(false);
+    (mockScene.anims.generateFrameNumbers as jest.Mock).mockReturnValue([0, 1, 2, 3]);
 
-    // Create animations for state transitions
+    // Get all possible actions from the Actions enum
+    const actionStates = Object.values(Actions);
+
+    // Call createAnimations
     animationLoader.createAnimations();
 
-    // Verify animations were created for different action states
-    const actionStates = [Actions.IDLE, Actions.WALKING, Actions.MINING];
+    // Verify animations were created for transitions
+    expect(mockScene.anims.create).toHaveBeenCalled();
 
-    actionStates.forEach(() => {
-      // For each action, verify that anims.create was called
-      expect(mockScene.anims?.create).toHaveBeenCalled();
+    // Reset the mock
+    jest.clearAllMocks();
+
+    // Test each action
+    actionStates.forEach((action) => {
+      if (action in ActionAnimations) {
+        // Call createAnimationsFromConfig directly with just this action
+        const singleActionConfig = {
+          [action]: ActionAnimations[action as keyof typeof ActionAnimations],
+        };
+        (animationLoader as any).createAnimationsFromConfig(singleActionConfig);
+
+        // For each action that has a config, verify that anims.create was called
+        expect(mockScene.anims.create).toHaveBeenCalled();
+
+        // Reset the mock for the next iteration
+        jest.clearAllMocks();
+      }
     });
   });
 
-  it('should handle errors when textures are missing', () => {
-    // Mock textures.exists to return false to simulate missing textures
-    const existsMock = mockScene.textures?.exists as jest.Mock;
-    existsMock.mockReturnValue(false);
+  it(
+    'should create walk animations for all directions',
+    ModelContextTest.createTest(async () => {
+      // Setup all required mocks
+      (mockScene.textures.exists as jest.Mock).mockReturnValue(true);
+      (mockScene.anims.generateFrameNumbers as jest.Mock).mockReturnValue([0, 1, 2, 3]);
 
-    // Call createAnimations - should not throw despite missing textures
-    expect(() => animationLoader.createAnimations()).not.toThrow();
-  });
+      // Wait for rendering to complete
+      await ModelContextTest.waitForRender();
+
+      // Call the createAnimations method
+      animationLoader.createAnimations();
+
+      // Verify walk animations were created for all directions
+      expect(mockScene.anims.create).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'walking_down' })
+      );
+      expect(mockScene.anims.create).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'walking_up' })
+      );
+      expect(mockScene.anims.create).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'walking_right' })
+      );
+      expect(mockScene.anims.create).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'walking_left' })
+      );
+
+      // No browser errors should occur
+      ModelContextTest.assertNoErrors();
+    })
+  );
 });

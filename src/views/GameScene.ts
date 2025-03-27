@@ -1,6 +1,9 @@
 import { GameController } from '../controllers/GameController';
 import { Player } from '../models/Player';
+import { NPC } from '../models/NPC';
+import { Dungeon } from '../models/Dungeon';
 import { PlayerView } from './PlayerView';
+import { NPCView } from './NPCView';
 
 // Create a more specific type for our scene objects
 interface GameObject {
@@ -23,6 +26,10 @@ export class GameScene {
   public playerView: PlayerView | null = null;
   private playerSprite: Phaser.GameObjects.Sprite | null = null;
 
+  // NPC related properties
+  private npcs: NPC[] = [];
+  private npcViews: Map<string, NPCView> = new Map();
+
   // Properties that will be attached at runtime by Phaser
   public scene!: Record<string, unknown>;
   public add!: {
@@ -41,6 +48,19 @@ export class GameScene {
   init(): void {
     // Called by Phaser when the scene starts
     this.playerView = new PlayerView(this as unknown as Phaser.Scene);
+
+    // Initialize NPCs
+    this.initializeNPCs();
+  }
+
+  private initializeNPCs(): void {
+    // Create Knight NPC
+    const knightNPC = new NPC('Knight', 'Sir Lancelot');
+    this.npcs.push(knightNPC);
+
+    // Create Knight NPC view
+    const knightView = new NPCView(this as unknown as Phaser.Scene, 'Knight');
+    this.npcViews.set(knightNPC.getName(), knightView);
   }
 
   preload(): void {
@@ -52,6 +72,11 @@ export class GameScene {
     // Preload player assets
     if (this.playerView) {
       this.playerView.preload();
+    }
+
+    // Preload NPC assets
+    for (const npcView of this.npcViews.values()) {
+      npcView.preload();
     }
   }
 
@@ -92,6 +117,43 @@ export class GameScene {
       // Set up camera to follow player
       this.cameras.main.startFollow(this.playerSprite);
       this.cameras.main.setZoom(1);
+    }
+
+    // Create NPCs in the dungeon
+    this.createNPCs(dungeon);
+  }
+
+  private createNPCs(dungeon: Dungeon): void {
+    // Map of NPC positions (can be expanded for more NPCs)
+    const npcPositions: Record<string, { x: number; y: number }> = {
+      'Sir Lancelot': { x: 5, y: 5 },
+    };
+
+    // Place each NPC in the dungeon
+    for (const npc of this.npcs) {
+      const name = npc.getName();
+      const pos = npcPositions[name];
+
+      if (pos) {
+        // Ensure the position is walkable
+        dungeon.ensureWalkable(pos.x, pos.y);
+
+        // Set the NPC position
+        const pixelX = pos.x * dungeon.tileSize + dungeon.tileSize / 2;
+        const pixelY = pos.y * dungeon.tileSize + dungeon.tileSize / 2;
+        npc.setPosition(pixelX, pixelY);
+
+        // Get the view for this NPC
+        const npcView = this.npcViews.get(name);
+
+        if (npcView) {
+          // Create the sprite - directly use the creation result
+          npcView.create(pixelX, pixelY);
+
+          // Animation playing is handled by NPCView's internal animation check
+          // No need for setTimeout here anymore
+        }
+      }
     }
   }
 

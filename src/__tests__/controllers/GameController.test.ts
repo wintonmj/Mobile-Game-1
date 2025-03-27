@@ -92,22 +92,22 @@ describe('GameController', () => {
   it('should ensure player starting position is walkable during initialization', () => {
     // Create a new GameController with a fresh Dungeon
     jest.restoreAllMocks();
-    
+
     // Create a Dungeon instance where all tiles are walls
     const dungeon = new Dungeon();
     // Mock the getTileAt method to return walls for all tiles
     jest.spyOn(dungeon, 'getTileAt').mockImplementation(() => 1);
-    
+
     // Create controller with our dungeon
     const controller = new GameController(mockScene, dungeon);
-    
+
     // Reset the mock to allow the real implementation to run
     jest.spyOn(dungeon, 'getTileAt').mockRestore();
     jest.spyOn(dungeon, 'ensureWalkable');
-    
+
     // Call init which should ensure position (2,2) is walkable
     controller.init();
-    
+
     // Now directly check if the dungeon makes (2,2) walkable
     expect(dungeon.isWalkable(2, 2)).toBe(true);
   });

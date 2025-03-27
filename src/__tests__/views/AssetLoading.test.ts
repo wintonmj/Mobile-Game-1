@@ -101,7 +101,7 @@ describe('Asset Loading and Error Handling', () => {
       (mockScene.textures?.exists as jest.Mock).mockImplementation((key: string) => {
         return key === 'idle_down_variant_1';
       });
-      
+
       (mockScene.textures?.getTextureKeys as jest.Mock).mockReturnValue(['idle_down_variant_1']);
 
       // Preload animations
@@ -109,7 +109,7 @@ describe('Asset Loading and Error Handling', () => {
 
       // Create animations
       animationLoader.createAnimations();
-      
+
       // Verify fallback texture was used
       expect(mockScene.anims?.create).toHaveBeenCalled();
     });
@@ -123,7 +123,7 @@ describe('Asset Loading and Error Handling', () => {
           mockErrorHandlers[0]({ key: `missing_texture_${i}` });
         }
       }
-      
+
       // All operations should still work without errors
       expect(() => {
         animationLoader.preloadAnimations();
@@ -142,10 +142,10 @@ describe('Asset Loading and Error Handling', () => {
         // Only fail the first variant, allowing others to succeed
         return key.includes('variant_0');
       });
-      
+
       // Preload and trigger load errors
       animationLoader.preloadAnimations();
-      
+
       // Verify multiple path variants were attempted
       const pathVariants = spritesheetSpy.mock.calls.filter(
         (call) => typeof call[1] === 'string' && call[1].includes('Idle_Down-Sheet.png')
@@ -173,10 +173,10 @@ describe('Asset Loading and Error Handling', () => {
       });
 
       (mockScene.textures?.getTextureKeys as jest.Mock).mockReturnValue(['idle_down_variant_1']);
-      
+
       // Create animations - should create fallback
       animationLoader.createAnimations();
-      
+
       // Verify anims.create was called at least once - implementation may vary
       expect(mockScene.anims?.create).toHaveBeenCalled();
     });
@@ -188,7 +188,7 @@ describe('Asset Loading and Error Handling', () => {
 
       // Call preload
       animationLoader.preloadAnimations();
-      
+
       // Verify that multiple path variants were attempted
       const spritesheetCalls = mockScene.load?.spritesheet.mock.calls;
 
@@ -267,7 +267,7 @@ describe('Asset Loading and Error Handling', () => {
 
       // Create a spy to watch for create animations being called
       const createSpy = jest.spyOn(animationLoader, 'createAnimations');
-      
+
       // Call preload
       animationLoader.preloadAnimations();
 
@@ -276,7 +276,7 @@ describe('Asset Loading and Error Handling', () => {
         const completeHandler = mockScene.load?.on.mock.calls.find(
           (call) => call[0] === 'complete'
         );
-        
+
         if (completeHandler) {
           completeHandler[1](); // Call the complete handler if it exists
         }

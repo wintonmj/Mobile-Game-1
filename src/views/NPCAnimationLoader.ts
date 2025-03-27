@@ -1,0 +1,258 @@
+import type Phaser from 'phaser';
+import { BaseAnimationLoader, AnimationConfig } from './BaseAnimationLoader';
+
+// Define NPC-specific animation configurations
+export interface NPCAnimationConfig {
+  idle: AnimationConfig;
+  talk: AnimationConfig;
+  [key: string]: AnimationConfig;
+}
+
+// Default NPC animation configurations
+export const DefaultNPCAnimations: NPCAnimationConfig = {
+  idle: {
+    spriteBase: 'Idle',
+    animBase: 'npc_idle',
+    frameCount: 4,
+    frameRate: 5,
+    repeat: -1,
+    yoyo: true,
+  },
+  talk: {
+    spriteBase: 'Talk',
+    animBase: 'npc_talk',
+    frameCount: 6,
+    frameRate: 8,
+    repeat: -1,
+    yoyo: true,
+  },
+};
+
+// Knight-specific animation configurations
+export const KnightAnimations: NPCAnimationConfig = {
+  idle: {
+    spriteBase: 'Idle',
+    animBase: 'npc_idle',
+    frameCount: 4, // Adjusted to be safer since we don't know exact frame count
+    frameRate: 8,
+    repeat: -1,
+    yoyo: false,
+  },
+  talk: {
+    spriteBase: 'Idle', // Use Idle since Knight doesn't have Talk animation
+    animBase: 'npc_talk',
+    frameCount: 4, // Same safe value
+    frameRate: 8,
+    repeat: -1,
+    yoyo: false,
+  },
+};
+
+export class NPCAnimationLoader extends BaseAnimationLoader {
+  // NPC-specific base path
+  private static readonly NPC_BASE_PATH = "assets/sprites/Entities/Npc's/";
+  private npcType: string;
+  private animationConfigs: NPCAnimationConfig;
+  private loaded: boolean = false;
+
+  constructor(
+    scene: Phaser.Scene,
+    npcType: string = 'Default',
+    customAnimations?: Partial<NPCAnimationConfig>
+  ) {
+    super(scene);
+    this.npcType = npcType;
+
+    // Set default animations based on NPC type
+    let defaultConfig = { ...DefaultNPCAnimations };
+
+    // Use Knight specific animations if applicable
+    if (npcType === 'Knight') {
+      defaultConfig = { ...KnightAnimations };
+    }
+
+    // Merge with any custom animations provided
+    const mergedConfig = { ...defaultConfig };
+
+    if (customAnimations) {
+      // Only merge defined properties from customAnimations
+      Object.keys(customAnimations).forEach((key) => {
+        const value = customAnimations[key as keyof Partial<NPCAnimationConfig>];
+        if (value !== undefined) {
+          mergedConfig[key] = value;
+        }
+      });
+    }
+
+    this.animationConfigs = mergedConfig;
+  }
+
+  public isLoaded(): boolean {
+    return this.loaded;
+  }
+
+  public preloadAnimations(): void {
+    try {
+      const basePath = `${NPCAnimationLoader.NPC_BASE_PATH}${this.npcType}/`;
+
+      // Remove 'src/' from path - assets should be in the public folder
+      if (this.npcType === 'Knight') {
+        // For Knight, load a simple fallback spritesheet
+        const key = 'knight_idle_sheet';
+        const path = `${basePath}${this.animationConfigs.idle.spriteBase}/Idle-Sheet.png`;
+
+        // Check if already loaded to prevent duplicate loading
+        if (!this.scene.textures.exists(key)) {
+          // Add specific file complete listener for this asset
+          this.scene.load.on('filecomplete-spritesheet-' + key, () => {
+            console.log(`Knight spritesheet loaded successfully: ${key}`);
+            this.loaded = true;
+            this.createAnimations();
+          });
+
+          // Add specific file error listener for this asset
+          this.scene.load.on('fileerror', (file: Phaser.Loader.File) => {
+            if (file.key === key) {
+              console.warn(`Failed to load Knight spritesheet: ${path}`);
+              this.loaded = true; // Mark as loaded anyway so we can continue with fallbacks
+              this.createAnimations();
+            }
+          });
+
+          // Use correct frame dimensions for Knight sprite sheet (128x32 with 4 frames = 32x32 per frame)
+          this.scene.load.spritesheet(key, path, {
+            frameWidth: 32,
+            frameHeight: 32,
+          });
+
+          // Start loading if not already in progress
+          if (this.scene.load.isLoading() === false) {
+            this.scene.load.start();
+          }
+        } else {
+          // If already loaded, just create the animations
+          this.loaded = true;
+          this.createAnimations();
+        }
+      } else {
+        // For other NPCs, use the base class method to load animations
+        this.preloadAnimationsFromConfig(basePath, this.animationConfigs);
+      }
+    } catch (error) {
+      console.error('Error loading NPC animations:', error);
+      this.loaded = true; // Mark as loaded so we can continue with fallbacks
+      this.createAnimations();
+    }
+  }
+
+  public createAnimations(): void {
+    try {
+      if (this.npcType === 'Knight') {
+        // Use the sprite key that was actually loaded
+        const spriteKey = 'knight_idle_sheet';
+
+        if (!this.scene.textures.exists(spriteKey)) {
+          console.warn(`Texture ${spriteKey} does not exist yet`);
+          return;
+        }
+
+        // Verify that the texture has frames before trying to use them
+        const textureSource = this.scene.textures.get(spriteKey);
+        const frameCount = textureSource.frameTotal;
+
+        if (frameCount <= 0) {
+          console.warn(`Texture ${spriteKey} has no frames available`);
+          this.createStaticFallbackAnimation();
+          return;
+        }
+
+        // For the Knight sprite sheet, we know there are 4 frames (128x32 with 32x32 frames)
+        const actualFrameCount = 4;
+        const maxFrame = Math.min(actualFrameCount - 1, frameCount - 1);
+
+        // Create animations for all directions using the same sprite
+        ['down', 'up', 'left', 'right'].forEach((direction) => {
+          const animKey = `idle_${direction}`;
+
+          if (!this.scene.anims.exists(animKey)) {
+            try {
+              // Create a simple animation with available frames
+              this.scene.anims.create({
+                key: animKey,
+                frames: this.scene.anims.generateFrameNumbers(spriteKey, {
+                  start: 0,
+                  end: maxFrame, // Use only available frames (should be 3)
+                }),
+                frameRate: 8,
+                repeat: -1,
+                yoyo: false,
+              });
+
+              // Also create talk animation as a copy of idle for now
+              const talkKey = `talk_${direction}`;
+              if (!this.scene.anims.exists(talkKey)) {
+                this.scene.anims.create({
+                  key: talkKey,
+                  frames: this.scene.anims.generateFrameNumbers(spriteKey, {
+                    start: 0,
+                    end: maxFrame,
+                  }),
+                  frameRate: 8,
+                  repeat: -1,
+                  yoyo: false,
+                });
+              }
+            } catch (error) {
+              console.error(`Error creating animation ${animKey}:`, error);
+              this.createStaticFallbackAnimation();
+            }
+          }
+        });
+
+        // Create a simple fallback animation
+        if (!this.scene.anims.exists('npc_idle_fallback')) {
+          this.createStaticFallbackAnimation();
+        }
+      } else {
+        // For other NPCs, use the base class method to create animations
+        this.createAnimationsFromConfig(this.animationConfigs);
+        this.createFallbackAnimation('npc_idle_fallback');
+      }
+    } catch (error) {
+      console.error('Error creating animations:', error);
+    }
+  }
+
+  private createStaticFallbackAnimation(): void {
+    try {
+      const spriteKey = 'knight_idle_sheet';
+
+      // Create a fallback animation with a single frame if possible
+      if (this.scene.textures.exists(spriteKey)) {
+        this.scene.anims.create({
+          key: 'npc_idle_fallback',
+          frames: [{ key: spriteKey, frame: 0 }],
+          frameRate: 1,
+          repeat: 0,
+        });
+      } else {
+        // If the texture doesn't exist, use any available texture
+        const availableTextures = this.scene.textures.getTextureKeys();
+        const usableTexture = availableTextures.find(
+          (key) => key !== '__DEFAULT' && key !== '__MISSING'
+        );
+
+        if (usableTexture) {
+          this.scene.anims.create({
+            key: 'npc_idle_fallback',
+            frames: [{ key: usableTexture, frame: 0 }],
+            frameRate: 1,
+            repeat: 0,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error creating fallback animation:', error);
+    }
+  }
+}
