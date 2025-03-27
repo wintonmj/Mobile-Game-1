@@ -121,31 +121,8 @@ export class ObjectPlacementController {
     object: Placeable,
     constraints: PlacementConstraint[]
   ): { x: number; y: number } | null {
-    // Find the first walkable position that's not at 0,0
-    const dungeon = this.getDungeon();
-    const width = dungeon.getSize().width / dungeon.tileSize;
-    const height = dungeon.getSize().height / dungeon.tileSize;
-
-    // Try positions in the middle of the map first (most likely to be walkable)
-    for (let x = 1; x < width - 1; x++) {
-      for (let y = 1; y < height - 1; y++) {
-        if (dungeon.isWalkable(x, y) && this.isPositionValid(x, y, constraints)) {
-          return this.gridSystem.gridToWorld({ x, y });
-        }
-      }
-    }
-
-    // If no position found in the middle, try the entire map
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        // Skip 0,0 as it's typically a wall
-        if ((x !== 0 || y !== 0) && this.isPositionValid(x, y, constraints)) {
-          return this.gridSystem.gridToWorld({ x, y });
-        }
-      }
-    }
-
-    return null;
+    // Use the default random placement strategy instead of sequential search
+    return this.defaultStrategy.findPosition(this, object);
   }
 
   /**

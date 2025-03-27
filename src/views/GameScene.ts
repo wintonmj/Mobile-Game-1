@@ -54,13 +54,22 @@ export class GameScene {
   }
 
   private initializeNPCs(): void {
-    // Create Knight NPC
-    const knightNPC = new NPC('Knight', 'Sir Lancelot');
-    this.npcs.push(knightNPC);
+    // Create Knight NPCs
+    const knightNPC1 = new NPC('Knight', 'Sir Lancelot');
+    const knightNPC2 = new NPC('Knight', 'Sir Galahad');
+    const knightNPC3 = new NPC('Knight', 'Sir Gawain');
+    const knightNPC4 = new NPC('Knight', 'Sir Percival');
+    
+    this.npcs.push(knightNPC1);
+    this.npcs.push(knightNPC2);
+    this.npcs.push(knightNPC3);
+    this.npcs.push(knightNPC4);
 
-    // Create Knight NPC view
-    const knightView = new NPCView(this as unknown as Phaser.Scene, 'Knight');
-    this.npcViews.set(knightNPC.getName(), knightView);
+    // Create Knight NPC views
+    this.npcViews.set(knightNPC1.getName(), new NPCView(this as unknown as Phaser.Scene, 'Knight'));
+    this.npcViews.set(knightNPC2.getName(), new NPCView(this as unknown as Phaser.Scene, 'Knight'));
+    this.npcViews.set(knightNPC3.getName(), new NPCView(this as unknown as Phaser.Scene, 'Knight'));
+    this.npcViews.set(knightNPC4.getName(), new NPCView(this as unknown as Phaser.Scene, 'Knight'));
   }
 
   preload(): void {
@@ -124,35 +133,29 @@ export class GameScene {
   }
 
   private createNPCs(dungeon: Dungeon): void {
-    // Map of NPC positions (can be expanded for more NPCs)
-    const npcPositions: Record<string, { x: number; y: number }> = {
-      'Sir Lancelot': { x: 5, y: 5 },
-    };
-
-    // Place each NPC in the dungeon
+    if (!this.controller) return;
+    
+    // Register NPCs with the placement controller
+    const placementController = this.controller.objectPlacementController;
+    
+    // Place each NPC in the dungeon using the placement controller
     for (const npc of this.npcs) {
+      // Register the NPC with the placement controller
+      placementController.registerObject(npc);
+      
+      // Place the NPC in a valid position
+      placementController.placeObject(npc);
+      
+      // Get the NPC's position after placement
+      const position = npc.getPosition();
       const name = npc.getName();
-      const pos = npcPositions[name];
-
-      if (pos) {
-        // Ensure the position is walkable
-        dungeon.ensureWalkable(pos.x, pos.y);
-
-        // Set the NPC position
-        const pixelX = pos.x * dungeon.tileSize + dungeon.tileSize / 2;
-        const pixelY = pos.y * dungeon.tileSize + dungeon.tileSize / 2;
-        npc.setPosition(pixelX, pixelY);
-
-        // Get the view for this NPC
-        const npcView = this.npcViews.get(name);
-
-        if (npcView) {
-          // Create the sprite - directly use the creation result
-          npcView.create(pixelX, pixelY);
-
-          // Animation playing is handled by NPCView's internal animation check
-          // No need for setTimeout here anymore
-        }
+      
+      // Get the view for this NPC
+      const npcView = this.npcViews.get(name);
+      
+      if (npcView) {
+        // Create the sprite with the properly placed position
+        npcView.create(position.x, position.y);
       }
     }
   }
