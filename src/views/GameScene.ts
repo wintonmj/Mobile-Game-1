@@ -59,7 +59,7 @@ export class GameScene {
     const knightNPC2 = new NPC('Knight', 'Sir Galahad');
     const knightNPC3 = new NPC('Knight', 'Sir Gawain');
     const knightNPC4 = new NPC('Knight', 'Sir Percival');
-    
+
     this.npcs.push(knightNPC1);
     this.npcs.push(knightNPC2);
     this.npcs.push(knightNPC3);
@@ -132,27 +132,27 @@ export class GameScene {
     this.createNPCs(dungeon);
   }
 
-  private createNPCs(dungeon: Dungeon): void {
+  private createNPCs(_dungeon: Dungeon): void {
     if (!this.controller) return;
-    
+
     // Register NPCs with the placement controller
     const placementController = this.controller.objectPlacementController;
-    
+
     // Place each NPC in the dungeon using the placement controller
     for (const npc of this.npcs) {
       // Register the NPC with the placement controller
       placementController.registerObject(npc);
-      
+
       // Place the NPC in a valid position
       placementController.placeObject(npc);
-      
+
       // Get the NPC's position after placement
       const position = npc.getPosition();
       const name = npc.getName();
-      
+
       // Get the view for this NPC
       const npcView = this.npcViews.get(name);
-      
+
       if (npcView) {
         // Create the sprite with the properly placed position
         npcView.create(position.x, position.y);

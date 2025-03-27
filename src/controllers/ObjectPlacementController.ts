@@ -119,7 +119,7 @@ export class ObjectPlacementController {
    */
   private findNewPosition(
     object: Placeable,
-    constraints: PlacementConstraint[]
+    _constraints: PlacementConstraint[]
   ): { x: number; y: number } | null {
     // Use the default random placement strategy instead of sequential search
     return this.defaultStrategy.findPosition(this, object);

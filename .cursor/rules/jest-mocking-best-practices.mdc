@@ -3,9 +3,23 @@ description:
 globs: **/src/__tests__/**/*.ts
 alwaysApply: false
 ---
- # Jest Mocking Best Practices
+---
+description: Best practices for Jest mocking and testing
+globs: ['**/src/__tests__/**/*']
+alwaysApply: false
+---
+# Jest Mocking Best Practices
 
-## Singleton Pattern for Controller Mocks
+## Table of Contents
+1. [Core Mocking Patterns](#core-mocking-patterns)
+2. [Module Configuration](#module-configuration)
+3. [Testing Patterns](#testing-patterns)
+4. [Error Handling](#error-handling)
+5. [Common Pitfalls](#common-pitfalls)
+
+## Core Mocking Patterns
+
+### Singleton Pattern for Controllers
 
 Always use a singleton pattern when mocking controllers or services that may be instantiated multiple times but should share the same mock functions:
 
@@ -36,18 +50,41 @@ export const Controller = jest.fn().mockImplementation(() => {
 export default { mockFunctions };
 ```
 
-Use @ts-nocheck - This avoids TypeScript errors when directly accessing private properties in tests.
-Don't rely on the initialization process - The main issue with InputController.test.ts was it relied on the init() method correctly setting up the internal state. Instead, we should:
-Directly set properties needed for testing
-Create test-specific implementations of methods
-Focus on testing the public interface, not implementation details
-Create a simple test-specific class - Instead of trying to mock the complex InputController with its dependencies on Phaser, we created a test-specific version that mimics the interface but is fully under our control.
-Avoid deep mock structures - The original approach required complex mock structures for Phaser, scene, cursors, keys, etc. This creates many points of failure.
-Mock at the right level - Instead of mocking low-level Phaser objects, we mocked at a higher level by creating a "TestableInputController" with the same interface.
-Test functional behavior, not implementation - We test what the methods do, not how they do it.
-Independent tests - Each test sets up its own state, avoiding dependencies between tests.
+### Mock Class Implementation
 
-## Jest Module Mapping
+When mocking classes, follow this pattern for consistency:
+
+```typescript
+class MockClass {
+  private static instance: MockClass;
+  
+  private constructor() {
+    // Initialize mock functions with proper typing
+    this.method1 = jest.fn();
+    this.method2 = jest.fn();
+    
+    // Set default implementations
+    this.method1.mockImplementation(() => {
+      // Default implementation
+    });
+  }
+
+  static getInstance(): MockClass {
+    if (!MockClass.instance) {
+      MockClass.instance = new MockClass();
+    }
+    return MockClass.instance;
+  }
+
+  // Mock functions with proper typing
+  method1: jest.Mock;
+  method2: jest.Mock;
+}
+```
+
+## Module Configuration
+
+### Jest Module Mapping
 
 Ensure your moduleNameMapper in jest.config.js covers all possible import paths:
 
@@ -59,7 +96,20 @@ moduleNameMapper: {
 }
 ```
 
-## Testing Mock Calls
+### Test Setup
+
+Configure global Jest behavior in setup.ts:
+
+```typescript
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Additional setup as needed
+});
+```
+
+## Testing Patterns
+
+### Testing Mock Calls
 
 When testing that mock functions were called:
 
@@ -73,25 +123,106 @@ expect(mockFunctions.method).toHaveBeenCalled();
 2. Be specific when testing conditional actions:
 ```typescript
 mockFunctions.isActionPressed.mockImplementation((action) => {
-  // Be explicit about which action returns true
   return action === Actions.SPECIFIC_ACTION;
+});
+```
+
+### Test Structure
+
+Follow the Arrange-Act-Assert pattern:
+
+```typescript
+test('should perform action', () => {
+  // Arrange
+  mockFunctions.method.mockReturnValue(expectedValue);
+  
+  // Act
+  const result = controller.performAction();
+  
+  // Assert
+  expect(result).toBe(expectedValue);
+  expect(mockFunctions.method).toHaveBeenCalled();
+});
+```
+
+## Error Handling
+
+### Error Mocking
+
+When mocking errors, ensure consistent error structure:
+
+```typescript
+// DON'T: Use inconsistent error structures
+const error = new Error('Something went wrong');
+error.code = 'SOME_ERROR'; // Missing proper type casting
+
+// DO: Match the exact error type and structure
+const error = new Error('File not found') as NodeJS.ErrnoException;
+error.code = 'ENOENT';
+throw error;
+```
+
+### Error Testing
+
+Test error scenarios explicitly:
+
+```typescript
+test('handles file not found', async () => {
+  // Arrange
+  const error = new Error('File not found') as NodeJS.ErrnoException;
+  error.code = 'ENOENT';
+  mockFunctions.readFile.mockRejectedValueOnce(error);
+  
+  // Act & Assert
+  await expect(service.loadFile()).rejects.toThrow('File not found');
 });
 ```
 
 ## Common Pitfalls
 
-- **Class Instantiation**: If a class creates new instances of other classes in its constructor, make sure those dependencies are mocked BEFORE the class is instantiated.
+### 1. Class Instantiation
+- Mock dependencies BEFORE instantiating classes
+- Use proper typing for mock functions
+- Avoid complex mock structures
 
-- **Mock References**: Always access mock functions through your exported mockFunctions object, not through the class instance or prototype.
+### 2. Mock References
+- Access mock functions through exported mockFunctions object
+- Don't rely on class instance or prototype
+- Keep mock implementations simple
 
-- **Test Isolation**: Use `jest.clearAllMocks()` in beforeEach to prevent test interference.
+### 3. Test Isolation
+- Use `jest.clearAllMocks()` in beforeEach
+- Reset environment variables after tests
+- Clean up global mocks
 
-- **Conditional Logic**: When mocking methods that participate in conditional logic (like isActionPressed), make sure your mock implementation matches the expected conditions.
+### 4. Conditional Logic
+- Make mock implementations match expected conditions
+- Test both success and failure paths
+- Verify error handling
 
-1. Direct property injection: Instead of trying to mock dependencies through complex import mocking, we directly set properties on the GameScene instance, which made the tests more robust.
-2. Isolated tests: Each test only tests what it needs to, with proper setup and teardown.
-3. Type safety: We used TypeScript's @ts-nocheck to avoid complex typing issues with our mocks, since we're using manual mocking patterns.
-4. Simple mock objects: We created straightforward mock objects that implement just the interfaces needed for each test.
-5. Global constructor mocking: We carefully managed global constructor overrides, ensuring they're cleaned up after each test.
-The only line not covered is line 50 in GameScene.ts, which appears to be an error handler in the preload method. If we wanted even higher coverage, we could add a test that specifically triggers that error condition.
-This testing approach can be extended for other components in your codebase, providing a reliable framework for testing classes that interact with Phaser and other external dependencies. The tests we've written are maintainable and focused on testing behavior rather than implementation details.
+### 5. Type Safety
+- Use proper TypeScript types for mocks
+- Avoid using `any` type
+- Use type assertions when necessary
+
+## Best Practices Summary
+
+1. **Organization**
+   - Keep mock files in dedicated `__tests__/mocks` directory
+   - Use consistent naming conventions
+   - Group related mocks together
+
+2. **Implementation**
+   - Use singleton pattern for shared mocks
+   - Implement proper typing
+   - Set default mock implementations
+
+3. **Testing**
+   - Follow Arrange-Act-Assert pattern
+   - Test both success and error cases
+   - Verify mock calls explicitly
+
+4. **Maintenance**
+   - Keep mocks simple and focused
+   - Document complex mock behavior
+   - Update mocks when interfaces change 

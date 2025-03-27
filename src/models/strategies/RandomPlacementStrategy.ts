@@ -1,6 +1,8 @@
 import { GridPosition } from '../interfaces/GridSystem';
 import { Placeable } from '../interfaces/Placeable';
 import { PlacementStrategy } from '../interfaces/PlacementStrategy';
+import { ObjectPlacementController } from '../../controllers/ObjectPlacementController';
+import { PlacementConstraint } from '../interfaces/PlacementConstraint';
 
 /**
  * Strategy that places objects at random valid positions
@@ -12,7 +14,10 @@ export class RandomPlacementStrategy implements PlacementStrategy {
     this.maxAttempts = maxAttempts;
   }
 
-  public findPosition(controller: any, object: Placeable): { x: number; y: number } | null {
+  public findPosition(
+    controller: ObjectPlacementController,
+    object: Placeable
+  ): { x: number; y: number } | null {
     const gridSystem = controller.getGridSystem();
     const constraints = object.getPlacementConstraints ? object.getPlacementConstraints() : [];
 
@@ -29,54 +34,58 @@ export class RandomPlacementStrategy implements PlacementStrategy {
 
     // Try random positions
     for (let i = 0; i < this.maxAttempts; i++) {
-      // Get a random position within the grid bounds
       const gridPos = this.getRandomGridPosition(controller);
-
-      // Check if it's valid
       if (this.isValidPosition(gridPos, controller, constraints)) {
-        // Convert to world coordinates and return
-        return gridSystem.gridToWorld(gridPos);
+        const worldPos = gridSystem.gridToWorld(gridPos);
+        return worldPos;
       }
     }
 
-    // No valid position found
     return null;
   }
 
   public getName(): string {
-    return 'RandomPlacementStrategy';
+    return 'random';
   }
 
-  private getRandomGridPosition(controller: any): GridPosition {
-    // Get grid dimensions from the controller
+  private getRandomGridPosition(controller: ObjectPlacementController): GridPosition {
     const dungeon = controller.getDungeon();
-    const width = dungeon.getSize().width / dungeon.tileSize;
-    const height = dungeon.getSize().height / dungeon.tileSize;
+    const size = dungeon.getSize();
 
-    // Avoid placing at 0,0 which is a wall in many tests
-    let x = 0;
-    let y = 0;
+    let x: number;
+    let y: number;
 
-    // Ensure we don't return a position at 0,0 (which is typically a wall)
-    while (x === 0 && y === 0) {
-      x = Math.floor(Math.random() * width);
-      y = Math.floor(Math.random() * height);
-
-      // Try to bias toward walkable areas if possible
-      const isWalkable = dungeon.isWalkable(x, y);
-      if (!isWalkable) {
-        // If not walkable, we have a small chance to regenerate
-        if (Math.random() < 0.8) {
-          x = 0;
-          y = 0; // Force regeneration
-        }
-      }
-    }
+    do {
+      x = Math.floor(Math.random() * size.width);
+      y = Math.floor(Math.random() * size.height);
+    } while (!dungeon.isWalkable(x, y));
 
     return { x, y };
   }
 
-  private isValidPosition(position: GridPosition, controller: any, constraints: any[]): boolean {
+  private isValidPosition(
+    position: GridPosition,
+    controller: ObjectPlacementController,
+    constraints: PlacementConstraint[]
+  ): boolean {
+    const dungeon = controller.getDungeon();
+    const size = dungeon.getSize();
+
+    // Check if position is within bounds
+    if (position.x < 0 || position.x >= size.width || position.y < 0 || position.y >= size.height) {
+      return false;
+    }
+
+    // Check if position is walkable
+    if (!dungeon.isWalkable(position.x, position.y)) {
+      return false;
+    }
+
+    // Check if position is occupied
+    if (controller.isPositionOccupied(position.x, position.y)) {
+      return false;
+    }
+
     // Check all constraints
     for (const constraint of constraints) {
       if (!constraint.isSatisfied(position, controller)) {
