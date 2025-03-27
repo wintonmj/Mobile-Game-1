@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { Actions, ActionAnimations } from '../models/Actions';
 
-export class AnimationLoader {
+export class PlayerAnimationLoader {
   private scene: Phaser.Scene;
   // Define constants for frame dimensions
   private static readonly FRAME_WIDTH = 64;
@@ -23,8 +23,8 @@ export class AnimationLoader {
 
       // Load at least the idle animation manually to ensure we have a fallback
       this.scene.load.spritesheet('idle_down', `${basePath}Idle_Base/Idle_Down-Sheet.png`, {
-        frameWidth: AnimationLoader.FRAME_WIDTH,
-        frameHeight: AnimationLoader.FRAME_HEIGHT,
+        frameWidth: PlayerAnimationLoader.FRAME_WIDTH,
+        frameHeight: PlayerAnimationLoader.FRAME_HEIGHT,
       });
 
       // Explicitly load walk animations as they are critical
@@ -33,8 +33,8 @@ export class AnimationLoader {
         const path = `${basePath}Walk_Base/Walk_${direction}-Sheet.png`;
 
         this.scene.load.spritesheet(key, path, {
-          frameWidth: AnimationLoader.FRAME_WIDTH,
-          frameHeight: AnimationLoader.FRAME_HEIGHT,
+          frameWidth: PlayerAnimationLoader.FRAME_WIDTH,
+          frameHeight: PlayerAnimationLoader.FRAME_HEIGHT,
         });
       });
 
@@ -45,8 +45,8 @@ export class AnimationLoader {
         `/assets/sprites/Entities/Characters/Body_A/Animations/Idle_Base/Idle_Down-Sheet.png`,
       ].forEach((path, index) => {
         this.scene.load.spritesheet(`idle_down_variant_${index}`, path, {
-          frameWidth: AnimationLoader.FRAME_WIDTH,
-          frameHeight: AnimationLoader.FRAME_HEIGHT,
+          frameWidth: PlayerAnimationLoader.FRAME_WIDTH,
+          frameHeight: PlayerAnimationLoader.FRAME_HEIGHT,
         });
       });
 
@@ -89,8 +89,8 @@ export class AnimationLoader {
         if (!this.scene.textures.exists(key)) {
           try {
             this.scene.load.spritesheet(key, path, {
-              frameWidth: AnimationLoader.FRAME_WIDTH,
-              frameHeight: AnimationLoader.FRAME_HEIGHT,
+              frameWidth: PlayerAnimationLoader.FRAME_WIDTH,
+              frameHeight: PlayerAnimationLoader.FRAME_HEIGHT,
             });
           } catch (loadError) {
             // Silent error handling

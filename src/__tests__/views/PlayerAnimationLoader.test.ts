@@ -1,11 +1,11 @@
 import { jest } from '@jest/globals';
-import { AnimationLoader } from '../../views/AnimationLoader';
+import { PlayerAnimationLoader } from '../../views/PlayerAnimationLoader';
 import { Actions } from '../../models/Actions';
 import type Phaser from 'phaser';
 
-describe('AnimationLoader', () => {
+describe('PlayerAnimationLoader', () => {
   let mockScene: Partial<Phaser.Scene>;
-  let animationLoader: AnimationLoader;
+  let animationLoader: PlayerAnimationLoader;
 
   beforeEach(() => {
     // Create mock textures object
@@ -35,7 +35,7 @@ describe('AnimationLoader', () => {
     };
 
     // Create animation loader instance
-    animationLoader = new AnimationLoader(mockScene as Phaser.Scene);
+    animationLoader = new PlayerAnimationLoader(mockScene as Phaser.Scene);
   });
 
   it('should preload animations without errors', () => {
