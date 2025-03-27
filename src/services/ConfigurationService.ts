@@ -14,6 +14,58 @@ export interface ConfigSchema {
 
 export type Environment = 'dev' | 'test' | 'prod';
 
+// In-memory configuration for testing
+const testConfigStore = new Map<string, string>();
+
+// Testing mode flag
+let isTestMode = false;
+
+/**
+ * Set the ConfigurationService to testing mode
+ * This should be called before creating any ConfigurationService instances in tests
+ */
+export function enableTestMode(enabled: boolean = true): void {
+  isTestMode = enabled;
+  if (enabled) {
+    // Clear the test store when enabling test mode
+    testConfigStore.clear();
+  }
+}
+
+/**
+ * Set test configuration for an environment
+ * @param env Environment
+ * @param config Configuration object
+ */
+export function setTestConfiguration(env: Environment, config: Record<string, any>): void {
+  if (!isTestMode) {
+    throw new Error('Cannot set test configuration when not in test mode');
+  }
+  testConfigStore.set(`config.${env}.json`, JSON.stringify(config));
+}
+
+/**
+ * Set invalid JSON for a specific environment (for testing parse errors)
+ * @param env Environment
+ */
+export function setInvalidTestConfiguration(env: Environment): void {
+  if (!isTestMode) {
+    throw new Error('Cannot set test configuration when not in test mode');
+  }
+  testConfigStore.set(`config.${env}.json`, '{invalid"json:content');
+}
+
+/**
+ * Clear test configuration for an environment
+ * @param env Environment
+ */
+export function clearTestConfiguration(env: Environment): void {
+  if (!isTestMode) {
+    throw new Error('Cannot clear test configuration when not in test mode');
+  }
+  testConfigStore.delete(`config.${env}.json`);
+}
+
 export class ConfigurationService implements Service {
   private config: Record<string, any> = {};
   private currentEnvironment: Environment = 'dev';
@@ -115,9 +167,22 @@ export class ConfigurationService implements Service {
     console.log(`Attempting to load configuration from: ${configPath}`);
 
     try {
-      console.log('Before fs.promises.readFile call');
-      const configContent = await fs.promises.readFile(configPath, 'utf8');
-      console.log('Successfully read file content:', configContent.substring(0, 50) + '...');
+      let configContent: string;
+
+      // Use test store in test mode, file system otherwise
+      if (isTestMode) {
+        configContent = testConfigStore.get(configPath) || '';
+        if (!configContent) {
+          throw new ConfigurationError(
+            `Configuration file not found: ${configPath}`,
+            'FILE_NOT_FOUND'
+          );
+        }
+      } else {
+        console.log('Before fs.promises.readFile call');
+        configContent = await fs.promises.readFile(configPath, 'utf8');
+        console.log('Successfully read file content:', configContent.substring(0, 50) + '...');
+      }
 
       try {
         const config = JSON.parse(configContent);
@@ -136,31 +201,39 @@ export class ConfigurationService implements Service {
       console.log('File read error:', error);
       console.log('Error type:', typeof error);
       console.log('Error is Error instance:', error instanceof Error);
-      if (error instanceof Error) {
-        console.log('Error name:', error.name);
-        console.log('Error message:', error.message);
-        console.log('Error has code property:', 'code' in error);
-        if ('code' in error) {
-          console.log('Error code:', (error as any).code);
-        }
+
+      // Convert to Error object if it's not already one
+      let typedError: Error;
+      if (!(error instanceof Error)) {
+        typedError = new Error(String(error));
+        console.log('Converted non-Error to Error:', typedError);
       } else {
-        // Convert non-Error objects to a more usable format
-        error = new Error(String(error));
-        console.log('Converted non-Error to Error:', error);
+        typedError = error;
       }
 
       // If it's already a ConfigurationError, pass it through
-      if (error instanceof ConfigurationError) {
-        throw error;
+      if (typedError instanceof ConfigurationError) {
+        throw typedError;
       }
 
-      // If it's a NodeJS.ErrnoException with ENOENT code, convert to ConfigurationError
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-        throw new ConfigurationError(`Configuration file not found: ${configPath}`, 'ENOENT');
+      // Check for file not found error
+      if ('code' in typedError && (typedError as any).code === 'ENOENT') {
+        throw new ConfigurationError(
+          `Configuration file not found: ${configPath}`,
+          'FILE_NOT_FOUND'
+        );
+      }
+
+      // Check for permission error
+      if ('code' in typedError && (typedError as any).code === 'EACCES') {
+        throw new ConfigurationError(
+          `Permission denied when accessing configuration file: ${configPath}`,
+          'PERMISSION_ERROR'
+        );
       }
 
       // For any other error, wrap it in a ConfigurationError
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = typedError.message || 'Unknown error';
       throw new ConfigurationError(`Failed to load configuration: ${errorMessage}`, 'LOAD_ERROR');
     }
   }

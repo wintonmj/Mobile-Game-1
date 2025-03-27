@@ -1,25 +1,87 @@
-import { ILoggerService } from '../../../services/interfaces/ILoggerService';
+import { jest } from '@jest/globals';
+import { Service } from '../../../services/Registry';
 
-export class MockLoggerService implements ILoggerService {
-  private logs: string[] = [];
+/**
+ * Mock implementation of a LoggerService
+ */
+export class MockLoggerService implements Service {
+  // Expose mock functions
+  mockFunctions = {
+    info: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    initialize: jest.fn().mockImplementation(async () => Promise.resolve()),
+    shutdown: jest.fn().mockImplementation(async () => Promise.resolve()),
+  };
 
-  log(message: string): void {
-    this.logs.push(`[LOG] ${message}`);
+  /**
+   * Log an informational message
+   */
+  info(message: string, ...args: any[]): void {
+    this.mockFunctions.info(message, ...args);
   }
 
-  error(message: string): void {
-    this.logs.push(`[ERROR] ${message}`);
+  /**
+   * Log a debug message
+   */
+  debug(message: string, ...args: any[]): void {
+    this.mockFunctions.debug(message, ...args);
   }
 
-  warn(message: string): void {
-    this.logs.push(`[WARN] ${message}`);
+  /**
+   * Log a warning message
+   */
+  warn(message: string, ...args: any[]): void {
+    this.mockFunctions.warn(message, ...args);
   }
 
-  debug(message: string): void {
-    this.logs.push(`[DEBUG] ${message}`);
+  /**
+   * Log an error message
+   */
+  error(message: string, ...args: any[]): void {
+    this.mockFunctions.error(message, ...args);
   }
 
-  getLogs(): string[] {
-    return [...this.logs];
+  /**
+   * Initialize the service
+   */
+  async initialize(): Promise<void> {
+    this.mockFunctions.initialize();
+    return Promise.resolve();
+  }
+
+  /**
+   * Shut down the service
+   */
+  async shutdown(): Promise<void> {
+    this.mockFunctions.shutdown();
+    return Promise.resolve();
+  }
+
+  /**
+   * Called when the service is registered
+   */
+  onRegister(): void {
+    // No action needed for the mock
+  }
+
+  /**
+   * Called when the service is unregistered
+   */
+  onUnregister(): void {
+    // No action needed for the mock
   }
 }
+
+/**
+ * Create a new mock LoggerService
+ */
+export function createMockLoggerService(): MockLoggerService {
+  return new MockLoggerService();
+}
+
+export default {
+  MockLoggerService,
+  createMockLoggerService,
+};

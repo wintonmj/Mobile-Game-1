@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+When a message contains "git commit":
+1. Analysis of changes:
+Identify files modified, added, and deleted
+Examine the nature of code changes in each file
+Detect patterns across changes (e.g., refactoring, bug fixes, new features)
+Identify potential impact areas
+2. One-line summary format:
+[type]: [concise description of change]
+Types include:
+feat: New feature
+fix: Bug fix
+refactor: Code refactoring without functionality change
+style: Code style/formatting changes
+docs: Documentation changes
+test: Adding or modifying tests
+perf: Performance improvements
+chore: Maintenance tasks, dependency updates, etc.
+3. Detailed summary structure:
+What changes were made (technical details)
+Why these changes were necessary (context)
+How they benefit the project:
+Code quality improvements
+Performance enhancements
+Bug elimination
+New functionality
+Maintainability improvements
+Testing improvements
+Example:
+feat: implement shared animation loader utility
+Improved code organization by:
+Creating a shared PhaserLoader utility following MVC architecture
+Centralizing animation loading logic to reduce duplication
+Adding proper TypeScript types for animation assets
+Ensuring compatibility across player and NPC components
+Reducing total code by 15% while improving readability
