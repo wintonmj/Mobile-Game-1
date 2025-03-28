@@ -1,4 +1,7 @@
 import { IAssetService, AssetEventMap, ILoadCompleted } from './interfaces/IAssetService';
+import { IService } from './interfaces/IService';
+import { ILifecycleAssetService } from './interfaces/ILifecycleAssetService';
+import { ServiceStatus } from './interfaces/ServiceStatus';
 import {
   AssetDefinition,
   AssetInfo,
@@ -86,15 +89,19 @@ const defaultConfig: AssetServiceConfig = {
  * Implementation of the AssetService interface.
  * Provides a centralized system for managing game assets.
  */
-export class AssetService implements IAssetService {
+export class AssetService implements IAssetService, IService, ILifecycleAssetService {
   // Asset registry and metadata storage
   private assets: Map<string, AssetInfo> = new Map();
   private groups: Map<string, string[]> = new Map();
-  private scene: Phaser.Scene;
+  private sceneAssets: Map<Phaser.Scene, Set<string>> = new Map();
+  private currentScene: Phaser.Scene | null = null;
+  private status: ServiceStatus = ServiceStatus.CREATED;
+  private scene: Phaser.Scene | null = null;
 
   // Loading state tracking
   private loadingPromises: Map<string, Promise<any>> = new Map();
   private loadingMetrics: Map<string, { startTime: number; endTime?: number }> = new Map();
+  private sceneLoadingStatus: Map<Phaser.Scene, { loaded: number; total: number; inProgress: string[] }> = new Map();
 
   // Event handling
   private eventBus: IEventBusService | null = null;
@@ -110,16 +117,18 @@ export class AssetService implements IAssetService {
     },
     {} as Record<AssetType, number>
   );
+  private sceneMemoryUsage: Map<Phaser.Scene, number> = new Map();
   private memoryMonitorInterval: number | null = null;
 
   /**
    * Creates a new instance of the AssetService
-   * @param scene The Phaser scene to use for loading assets
+   * @param scene The Phaser scene
    * @param registry The service registry for accessing other services
    * @param config Optional configuration options
    */
   constructor(scene: Phaser.Scene, registry: IRegistry, config?: Partial<AssetServiceConfig>) {
     this.scene = scene;
+    this.currentScene = scene;
     this.config = { ...defaultConfig, ...config };
 
     // Try to get EventBusService reference, but don't throw if unavailable
@@ -153,9 +162,9 @@ export class AssetService implements IAssetService {
    * @param key Unique identifier for the asset
    * @param path Path to the asset file
    * @param type Type of the asset
-   * @param _options Optional loading configuration
+   * @param options Optional loading configuration
    */
-  registerAsset(key: string, path: string, type: AssetType, _options?: AssetOptions): void {
+  registerAsset(key: string, path: string, type: AssetType, options?: AssetOptions): void {
     // Validate parameters
     if (!key || typeof key !== 'string') {
       throw new Error('Asset key must be a non-empty string');
@@ -183,13 +192,21 @@ export class AssetService implements IAssetService {
       path,
       type,
       loaded: false,
-      cachePolicy: CachePolicy.PERSISTENT, // Default policy
+      cachePolicy: options?.cachePolicy ?? CachePolicy.PERSISTENT,
+      scene: this.currentScene,
     };
 
     // Store in registry
     this.assets.set(key, assetInfo);
 
-    // Emit registration event
+    // Track scene-specific assets
+    if (this.currentScene) {
+      if (!this.sceneAssets.has(this.currentScene)) {
+        this.sceneAssets.set(this.currentScene, new Set());
+      }
+      this.sceneAssets.get(this.currentScene)?.add(key);
+    }
+
     this.emitEvent('asset.state.changed', {
       key,
       previousState: 'unregistered',
@@ -441,10 +458,12 @@ export class AssetService implements IAssetService {
     key: string,
     type: AssetType
   ): Phaser.GameObjects.GameObject | Phaser.Loader.FileTypes.AudioFile | Phaser.Textures.Texture | object {
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
+    }
+
     switch (type) {
       case AssetType.IMAGE:
-      case AssetType.SPRITE_SHEET:
-      case AssetType.ATLAS:
         return this.scene.textures.get(key);
       case AssetType.AUDIO:
         return this.scene.sound.get(key);
@@ -471,152 +490,94 @@ export class AssetService implements IAssetService {
     | Phaser.Textures.Texture
     | object
   > {
-    // Validate key
-    if (!key || typeof key !== 'string') {
-      return Promise.reject(new Error('Asset key must be a non-empty string'));
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
 
-    // Check if asset exists
-    const assetInfo = this.assets.get(key);
+    const assetInfo = this.getAssetInfo(key);
     if (!assetInfo) {
-      return Promise.reject(new Error(`Asset with key "${key}" is not registered`));
+      throw new Error(`Asset not found: ${key}`);
     }
 
     // Check if already loaded
-    if (assetInfo.loaded) {
+    if (this.isLoaded(key)) {
       return Promise.resolve(this.getAssetByType(key, assetInfo.type));
     }
 
-    // Check if already loading
-    if (this.loadingPromises.has(key)) {
-      return this.loadingPromises.get(key)!;
-    }
-
-    // Start loading time tracking
-    const startTime = performance.now();
-    this.loadingMetrics.set(key, { startTime });
-
-    // Emit load started event
-    this.emitEvent('asset.load.started', {
-      key,
-      type: assetInfo.type,
-      timestamp: startTime,
-    });
-
     // Create loading promise
-    const loadPromise = new Promise<
-      | Phaser.GameObjects.GameObject
-      | Phaser.Loader.FileTypes.AudioFile
-      | Phaser.Textures.Texture
-      | object
-    >((resolve, reject) => {
-      try {
-        // Load based on asset type
-        switch (assetInfo.type) {
-          case AssetType.IMAGE:
-            this.scene.load.image(key, assetInfo.path);
-            break;
-          case AssetType.SPRITE_SHEET:
-            const options = this.getAssetOptions(key);
-            if (options?.frameConfig) {
-              this.scene.load.spritesheet(key, assetInfo.path, options.frameConfig);
-            } else if (options?.frameWidth && options?.frameHeight) {
-              this.scene.load.spritesheet(key, assetInfo.path, {
-                frameWidth: options.frameWidth,
-                frameHeight: options.frameHeight,
-                start: options.frameStart,
-                end: options.frameMax,
-              } as Phaser.Types.Loader.FileTypes.ImageFrameConfig);
-            } else {
-              throw new Error('Missing required frame configuration for spritesheet');
-            }
-            break;
-          case AssetType.ATLAS:
-            const atlasOptions = this.getAssetOptions(key);
-            if (atlasOptions?.atlasURL) {
-              this.scene.load.atlas(key, atlasOptions.atlasURL, assetInfo.path);
-            } else {
-              this.scene.load.atlas(key, assetInfo.path);
-            }
-            break;
-          case AssetType.AUDIO:
-            const audioOptions = this.getAssetOptions(key);
-            this.scene.load.audio(key, assetInfo.path, {
-              rate: audioOptions?.audioRate,
-              loop: audioOptions?.loop,
-            });
-            break;
-          case AssetType.JSON:
-            this.scene.load.json(key, assetInfo.path);
-            break;
-          case AssetType.BITMAP_FONT:
-            const fontOptions = this.getAssetOptions(key);
-            if (fontOptions?.dataURL) {
-              this.scene.load.bitmapFont(key, fontOptions.dataURL, assetInfo.path);
-            } else {
-              this.scene.load.bitmapFont(key, assetInfo.path);
-            }
-            break;
-          default:
-            throw new Error(`Unsupported asset type: ${assetInfo.type}`);
-        }
-
-        // Start loading
-        this.scene.load.start();
-
-        // Handle load complete
-        this.scene.load.once(`complete`, () => {
-          const endTime = performance.now();
-          const duration = endTime - startTime;
-          
-          // Update loading metrics
-          this.loadingMetrics.set(key, { startTime, endTime });
-          
-          // Update asset info
-          assetInfo.loaded = true;
-          assetInfo.loadTime = duration;
-          
-          // Emit load completed event with timing data
-          this.emitEvent('asset.load.completed', {
-            key,
-            type: assetInfo.type,
-            duration,
-            size: this.getAssetSize(key),
-          });
-
-          resolve(this.getAssetByType(key, assetInfo.type));
-        });
-
-        // Handle load error
-        this.scene.load.once(`loaderror`, (file: any) => {
-          if (file.key === key) {
-            const error = new Error(`Failed to load asset: ${file.src}`);
-            this.emitEvent('asset.load.error', {
-              key,
-              type: assetInfo.type,
-              error,
-              attemptCount: 1,
-              willRetry: false,
-            });
-            reject(error);
-          }
-        });
-      } catch (error) {
-        reject(error);
+    const loadPromise = new Promise<any>((resolve, reject) => {
+      if (!this.scene) {
+        reject(new Error('Scene not initialized'));
+        return;
       }
+
+      const options = this.getAssetOptions(key);
+      const atlasOptions = options as { atlasURL?: string };
+      const fontOptions = options as { dataURL?: string };
+
+      switch (assetInfo.type) {
+        case AssetType.IMAGE:
+          this.scene.load.image(key, assetInfo.path);
+          break;
+        case AssetType.SPRITE_SHEET:
+          if (options?.frameConfig) {
+            this.scene.load.spritesheet(key, assetInfo.path, options.frameConfig);
+          } else {
+            this.scene.load.spritesheet(key, assetInfo.path, {
+              frameWidth: 32,
+              frameHeight: 32,
+            });
+          }
+          break;
+        case AssetType.ATLAS:
+          if (atlasOptions.atlasURL) {
+            this.scene.load.atlas(key, atlasOptions.atlasURL, assetInfo.path);
+          } else {
+            this.scene.load.atlas(key, assetInfo.path);
+          }
+          break;
+        case AssetType.AUDIO:
+          this.scene.load.audio(key, assetInfo.path, {
+            rate: options?.audioRate,
+            loop: options?.loop,
+          });
+          break;
+        case AssetType.JSON:
+          this.scene.load.json(key, assetInfo.path);
+          break;
+        case AssetType.BITMAP_FONT:
+          if (fontOptions.dataURL) {
+            this.scene.load.bitmapFont(key, fontOptions.dataURL, assetInfo.path);
+          } else {
+            this.scene.load.bitmapFont(key, assetInfo.path);
+          }
+          break;
+        default:
+          reject(new Error(`Unsupported asset type: ${assetInfo.type}`));
+          return;
+      }
+
+      this.scene.load.start();
+
+      this.scene.load.once(`complete`, () => {
+        if (!this.scene) {
+          reject(new Error('Scene not initialized'));
+          return;
+        }
+        // Update asset info to mark as loaded
+        assetInfo.loaded = true;
+        assetInfo.lastUsed = Date.now();
+        resolve(this.getAssetByType(key, assetInfo.type));
+      });
+
+      this.scene.load.once(`loaderror`, (file: any) => {
+        reject(new Error(`Failed to load asset: ${file.key}`));
+      });
     });
 
-    // Store promise
+    // Store promise and start loading
     this.loadingPromises.set(key, loadPromise);
-
-    // Clean up promise after completion or error
-    loadPromise
-      .then(() => {
-        this.loadingPromises.delete(key);
-      })
-      .catch(() => {
-        this.loadingPromises.delete(key);
-      });
+    this.loadingMetrics.set(key, { startTime: Date.now() });
 
     return loadPromise;
   }
@@ -628,13 +589,17 @@ export class AssetService implements IAssetService {
    * @private
    */
   private getAssetSize(key: string): number | undefined {
-    const assetInfo = this.assets.get(key);
-    if (!assetInfo) return undefined;
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
+    }
+
+    const assetInfo = this.getAssetInfo(key);
+    if (!assetInfo) {
+      return undefined;
+    }
 
     switch (assetInfo.type) {
       case AssetType.IMAGE:
-      case AssetType.SPRITE_SHEET:
-      case AssetType.ATLAS:
         return this.scene.textures.get(key).source[0].width * this.scene.textures.get(key).source[0].height * 4;
       case AssetType.AUDIO:
         return this.scene.sound.get(key).duration * 44100 * 2; // Approximate size based on duration
@@ -689,42 +654,32 @@ export class AssetService implements IAssetService {
     | Phaser.Loader.FileTypes.AudioFile
     | Phaser.Textures.Texture
     | object {
-    const assetInfo = this.assets.get(key);
-    if (!assetInfo || !assetInfo.loaded) {
-      throw new Error(`Asset "${key}" is not loaded`);
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
 
-    // Update last used timestamp
-    assetInfo.lastUsed = Date.now();
+    const assetInfo = this.getAssetInfo(key);
+    if (!assetInfo) {
+      throw new Error(`Asset not found: ${key}`);
+    }
 
-    // Return appropriate asset based on type
     switch (assetInfo.type) {
       case AssetType.IMAGE:
-      case AssetType.SPRITE_SHEET:
-      case AssetType.ATLAS:
         return this.scene.textures.get(key);
-
       case AssetType.AUDIO:
         return this.scene.sound.get(key);
-
       case AssetType.JSON:
         return this.scene.cache.json.get(key);
-
       case AssetType.BITMAP_FONT:
         return this.scene.cache.bitmapFont.get(key);
-
       case AssetType.VIDEO:
         return this.scene.cache.video.get(key);
-
       case AssetType.TILEMAP:
         return this.scene.cache.tilemap.get(key);
-
       case AssetType.HTML:
         return this.scene.cache.html.get(key);
-
       case AssetType.SHADER:
         return this.scene.cache.shader.get(key);
-
       default:
         throw new Error(`Unsupported asset type: ${assetInfo.type}`);
     }
@@ -794,35 +749,9 @@ export class AssetService implements IAssetService {
    * @throws Error if asset is not loaded or is not a texture
    */
   getTexture(key: string): Phaser.Textures.Texture {
-    console.log(`[CachePolicy] Getting texture: ${key}`);
-    const assetInfo = this.assets.get(key);
-
-    if (!assetInfo) {
-      console.log(`[CachePolicy] Asset ${key} not registered`);
-      throw new Error(`Asset with key "${key}" is not registered`);
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
-
-    if (!assetInfo.loaded) {
-      console.log(`[CachePolicy] Asset ${key} not loaded`);
-      throw new Error(`Asset with key "${key}" is not loaded yet. Call loadAsset() first.`);
-    }
-
-    if (assetInfo.type !== AssetType.IMAGE) {
-      console.log(`[CachePolicy] Asset ${key} is not a texture (type: ${assetInfo.type})`);
-      throw new Error(`Asset with key "${key}" is not a texture (type: ${assetInfo.type})`);
-    }
-
-    // Update last used timestamp
-    this.updateLastUsed(key);
-
-    // Check cache policy
-    if (!this.enforceCachePolicy(assetInfo)) {
-      console.log(`[CachePolicy] Asset ${key} has expired based on its cache policy, releasing`);
-      this.releaseAsset(key);
-      throw new Error(`Asset with key "${key}" has expired based on its cache policy`);
-    }
-
-    console.log(`[CachePolicy] Returning texture for ${key}`);
     return this.scene.textures.get(key);
   }
 
@@ -833,29 +762,9 @@ export class AssetService implements IAssetService {
    * @throws Error if asset is not loaded or is not an audio asset
    */
   getAudio(key: string): Phaser.Sound.BaseSound {
-    const assetInfo = this.assets.get(key);
-
-    if (!assetInfo) {
-      throw new Error(`Asset with key "${key}" is not registered`);
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
-
-    if (!assetInfo.loaded) {
-      throw new Error(`Asset with key "${key}" is not loaded yet. Call loadAsset() first.`);
-    }
-
-    if (assetInfo.type !== AssetType.AUDIO) {
-      throw new Error(`Asset with key "${key}" is not an audio asset (type: ${assetInfo.type})`);
-    }
-
-    // Update last used timestamp
-    this.updateLastUsed(key);
-
-    // Check cache policy
-    if (!this.enforceCachePolicy(assetInfo)) {
-      this.releaseAsset(key);
-      throw new Error(`Asset with key "${key}" has expired based on its cache policy`);
-    }
-
     return this.scene.sound.get(key);
   }
 
@@ -866,29 +775,9 @@ export class AssetService implements IAssetService {
    * @throws Error if asset is not loaded or is not a JSON asset
    */
   getJSON(key: string): object {
-    const assetInfo = this.assets.get(key);
-
-    if (!assetInfo) {
-      throw new Error(`Asset with key "${key}" is not registered`);
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
-
-    if (!assetInfo.loaded) {
-      throw new Error(`Asset with key "${key}" is not loaded yet. Call loadAsset() first.`);
-    }
-
-    if (assetInfo.type !== AssetType.JSON) {
-      throw new Error(`Asset with key "${key}" is not a JSON (type: ${assetInfo.type})`);
-    }
-
-    // Update last used timestamp
-    this.updateLastUsed(key);
-
-    // Check cache policy
-    if (!this.enforceCachePolicy(assetInfo)) {
-      this.releaseAsset(key);
-      throw new Error(`Asset with key "${key}" has expired based on its cache policy`);
-    }
-
     return this.scene.cache.json.get(key);
   }
 
@@ -898,23 +787,9 @@ export class AssetService implements IAssetService {
    * @returns Phaser texture
    */
   getAtlas(key: string): Phaser.Textures.Texture {
-    const assetInfo = this.assets.get(key);
-
-    if (!assetInfo) {
-      throw new Error(`Asset with key "${key}" is not registered`);
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
-
-    if (!assetInfo.loaded) {
-      throw new Error(`Asset with key "${key}" is not loaded yet. Call loadAsset() first.`);
-    }
-
-    if (assetInfo.type !== AssetType.ATLAS) {
-      throw new Error(`Asset with key "${key}" is not an atlas (type: ${assetInfo.type})`);
-    }
-
-    // Update last used timestamp
-    assetInfo.lastUsed = Date.now();
-
     return this.scene.textures.get(key);
   }
 
@@ -924,25 +799,9 @@ export class AssetService implements IAssetService {
    * @returns Phaser bitmap text
    */
   getBitmapFont(key: string): Phaser.GameObjects.BitmapText {
-    const assetInfo = this.assets.get(key);
-
-    if (!assetInfo) {
-      throw new Error(`Asset with key "${key}" is not registered`);
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
-
-    if (!assetInfo.loaded) {
-      throw new Error(`Asset with key "${key}" is not loaded yet. Call loadAsset() first.`);
-    }
-
-    if (assetInfo.type !== AssetType.BITMAP_FONT) {
-      throw new Error(`Asset with key "${key}" is not a bitmap font (type: ${assetInfo.type})`);
-    }
-
-    // Update last used timestamp
-    assetInfo.lastUsed = Date.now();
-
-    // Create a bitmap text object with this font
-    // Note: We're returning a new instance each time this is called
     return this.scene.add.bitmapText(0, 0, key, '');
   }
 
@@ -1054,130 +913,66 @@ export class AssetService implements IAssetService {
    * @returns True if the asset was released
    */
   releaseAsset(key: string): boolean {
-    console.log(`[Release] Attempting to release asset: ${key}`);
-    
-    // Validate key
-    if (!key || typeof key !== 'string') {
-      console.error('[Release] Invalid asset key provided for release');
-      return false;
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
 
-    // Check if asset exists in registry
-    const assetInfo = this.assets.get(key);
+    const assetInfo = this.getAssetInfo(key);
     if (!assetInfo) {
-      console.warn(`[Release] Cannot release asset "${key}": Asset is not registered`);
-      return false;
-    }
-
-    console.log(`[Release] Asset info: type=${assetInfo.type}, loaded=${assetInfo.loaded}, cachePolicy=${assetInfo.cachePolicy}`);
-
-    // Check if asset is loaded
-    if (!assetInfo.loaded) {
-      console.warn(`[Release] Cannot release asset "${key}": Asset is not loaded`);
-      return false;
-    }
-
-    // If asset is currently loading, wait for it to finish
-    if (this.loadingPromises.has(key)) {
-      console.warn(`[Release] Cannot release asset "${key}": Asset is currently loading`);
       return false;
     }
 
     try {
-      console.log(`[Release] Releasing asset ${key} of type ${assetInfo.type}`);
-      
-      // Release asset based on type
       switch (assetInfo.type) {
         case AssetType.IMAGE:
-        case AssetType.SPRITE_SHEET:
-        case AssetType.ATLAS:
           if (this.scene.textures.exists(key)) {
-            console.log(`[Release] Removing texture: ${key}`);
             this.scene.textures.remove(key);
           }
           break;
-
-        case AssetType.AUDIO: {
+        case AssetType.AUDIO:
           const sound = this.scene.sound.get(key);
           if (sound) {
-            console.log(`[Release] Destroying audio: ${key}`);
             sound.destroy();
           }
           break;
-        }
-
-        case AssetType.VIDEO: {
+        case AssetType.VIDEO:
           const video = this.scene.cache.video.get(key);
           if (video) {
-            console.log(`[Release] Removing video: ${key}`);
-            video.remove();
+            video.destroy();
           }
           break;
-        }
-
         case AssetType.BITMAP_FONT:
           if (this.scene.cache.bitmapFont.has(key)) {
-            console.log(`[Release] Removing bitmap font: ${key}`);
             this.scene.cache.bitmapFont.remove(key);
           }
           break;
-
         case AssetType.JSON:
           if (this.scene.cache.json.has(key)) {
-            console.log(`[Release] Removing JSON: ${key}`);
             this.scene.cache.json.remove(key);
           }
           break;
-
         case AssetType.TILEMAP:
           if (this.scene.cache.tilemap.has(key)) {
-            console.log(`[Release] Removing tilemap: ${key}`);
             this.scene.cache.tilemap.remove(key);
           }
           break;
-
         case AssetType.HTML:
           if (this.scene.cache.html.has(key)) {
-            console.log(`[Release] Removing HTML: ${key}`);
             this.scene.cache.html.remove(key);
           }
           break;
-
         case AssetType.SHADER:
           if (this.scene.cache.shader.has(key)) {
-            console.log(`[Release] Removing shader: ${key}`);
             this.scene.cache.shader.remove(key);
           }
           break;
-
-        default:
-          console.warn(`[Release] Unsupported asset type for release: ${assetInfo.type}`);
-          return false;
       }
 
-      // Update asset info
-      assetInfo.loaded = false;
-      delete assetInfo.loadTime;
-      delete assetInfo.lastUsed;
-
-      // Emit release event
-      this.emitEvent('asset.state.changed', {
-        key,
-        previousState: 'loaded',
-        newState: 'registered',
-      });
-
-      // Also emit specific release event
-      this.emitEvent('asset.released', {
-        key,
-        type: assetInfo.type,
-        timestamp: Date.now(),
-      });
-
-      console.log(`[Release] Successfully released asset: ${key}`);
+      // Remove from registry
+      this.assets.delete(key);
       return true;
     } catch (error) {
-      console.error(`[Release] Error releasing asset "${key}":`, error);
+      console.error(`Error releasing asset ${key}:`, error);
       return false;
     }
   }
@@ -1187,24 +982,22 @@ export class AssetService implements IAssetService {
    * @param keys Optional array of asset keys to clear. If not provided, all loaded assets will be cleared.
    */
   clearAssets(keys?: string[]): void {
-    console.log('clearAssets called with keys:', keys);
-    
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
+    }
+
     if (keys) {
       // Clear specific assets
-      keys.forEach(key => {
-        const assetInfo = this.assets.get(key);
-        console.log(`Clearing specific asset: ${key}, cache policy: ${assetInfo?.cachePolicy}`);
+      for (const key of keys) {
+        const assetInfo = this.getAssetInfo(key);
         if (assetInfo && assetInfo.cachePolicy !== CachePolicy.PERSISTENT) {
           this.releaseAsset(key);
         }
-      });
+      }
     } else {
       // Clear all non-persistent assets
-      console.log('Clearing all non-persistent assets');
       for (const [key, assetInfo] of this.assets.entries()) {
-        console.log(`Checking asset: ${key}, cache policy: ${assetInfo.cachePolicy}`);
         if (assetInfo.cachePolicy !== CachePolicy.PERSISTENT) {
-          console.log(`Releasing asset: ${key}`);
           this.releaseAsset(key);
         }
       }
@@ -1216,155 +1009,46 @@ export class AssetService implements IAssetService {
    * @returns Memory usage data
    */
   getMemoryUsage(): MemoryUsageData {
-    // Calculate memory usage for each asset
-    const memoryByAsset = new Map<string, number>();
-    let totalMemory = 0;
-
-    // Track memory by asset type
-    const memoryByType: Record<AssetType, number> = Object.values(AssetType).reduce(
-      (acc, type) => {
-        acc[type] = 0;
-        return acc;
-      },
-      {} as Record<AssetType, number>
-    );
-
-    // Calculate memory usage for each loaded asset
-    this.assets.forEach((asset, key) => {
-      if (!asset.loaded) return;
-
-      // Estimate memory usage based on asset type
-      let estimatedMemory = 0;
-
-      try {
-        switch (asset.type) {
-          case AssetType.IMAGE:
-          case AssetType.SPRITE_SHEET:
-          case AssetType.ATLAS:
-            // Get texture and estimate memory usage
-            if (this.scene.textures.exists(key)) {
-              const texture = this.scene.textures.get(key);
-              const frame = texture.get();
-
-              if (frame) {
-                // Calculate approximate memory usage: width * height * 4 bytes (RGBA)
-                estimatedMemory = (frame.width * frame.height * 4) / (1024 * 1024); // Convert to MB
-              }
-            }
-            break;
-
-          case AssetType.AUDIO:
-            // Audio estimation is more complex and depends on format, duration, etc.
-            // For now, use a conservative estimate based on typical audio file sizes
-            estimatedMemory = 1; // Assume 1MB per audio file
-            break;
-
-          case AssetType.VIDEO:
-            // Video estimation is also complex
-            // For now, use a conservative estimate
-            estimatedMemory = 5; // Assume 5MB per video
-            break;
-
-          case AssetType.JSON:
-            // For JSON, estimate based on stringified size
-            try {
-              const json = this.scene.cache.json.get(key);
-              const jsonString = JSON.stringify(json);
-              estimatedMemory = jsonString.length / (1024 * 1024); // Convert bytes to MB
-            } catch (e) {
-              estimatedMemory = 0.1; // Fallback to 0.1MB if we can't stringify
-            }
-            break;
-
-          case AssetType.BITMAP_FONT:
-            // Bitmap fonts are typically smaller than full textures
-            estimatedMemory = 0.5; // Assume 0.5MB per bitmap font
-            break;
-
-          case AssetType.TILEMAP:
-            // Tilemaps can vary greatly in size
-            estimatedMemory = 1; // Assume 1MB per tilemap
-            break;
-
-          case AssetType.HTML:
-            // HTML is typically small
-            estimatedMemory = 0.1; // Assume 0.1MB per HTML asset
-            break;
-
-          case AssetType.SHADER:
-            // Shaders are very small
-            estimatedMemory = 0.05; // Assume 0.05MB per shader
-            break;
-
-          default:
-            estimatedMemory = 0.1; // Default to 0.1MB for unknown types
-        }
-      } catch (error) {
-        console.warn(`[AssetService] Error estimating memory for asset "${key}":`, error);
-        estimatedMemory = 0.1; // Default fallback
-      }
-
-      // Store memory usage
-      memoryByAsset.set(key, estimatedMemory);
-      memoryByType[asset.type] += estimatedMemory;
-      totalMemory += estimatedMemory;
-
-      // Update tracking
-      this.memoryUsage[asset.type] = memoryByType[asset.type];
-    });
-
-    // Find largest assets for reporting
-    const assetEntries = Array.from(memoryByAsset.entries());
-    assetEntries.sort((a, b) => b[1] - a[1]); // Sort by size, descending
-
-    const largestAssets = assetEntries.slice(0, 10).map(([key, size]) => {
-      const asset = this.assets.get(key)!;
-      return {
-        key,
-        size,
-        type: asset.type,
-      };
-    });
-
-    // Create memory usage data
-    const memoryData: MemoryUsageData = {
-      total: totalMemory,
-      byType: memoryByType,
-      largestAssets,
-    };
-
-    // Store additional data locally for potential future use but don't include in return type
-    const timestamp = Date.now();
-
-    // Emit memory usage event
-    this.emitEvent('asset.memory.usage', {
-      total: totalMemory,
-      byType: memoryByType,
-      largestAssets,
-      timestamp, // This is fine for the event since IMemoryUsage has timestamp
-    });
-
-    // Check for memory thresholds and emit warnings
-    if (totalMemory >= this.config.memoryCriticalThreshold) {
-      this.emitEvent('asset.memory.critical', {
-        currentUsage: totalMemory,
-        threshold: this.config.memoryCriticalThreshold,
-        requiredAction: 'Release assets immediately or risk application crash',
-      });
-
-      // Automatically prune if configured to do so
-      if (this.config.autoPruneCache) {
-        this.pruneCache(this.config.memoryCriticalThreshold * 0.7); // Aim to reduce to 70% of critical threshold
-      }
-    } else if (totalMemory >= this.config.memoryWarningThreshold) {
-      this.emitEvent('asset.memory.warning', {
-        currentUsage: totalMemory,
-        threshold: this.config.memoryWarningThreshold,
-        recommendedAction: 'Consider releasing unused assets',
-      });
+    if (!this.scene) {
+      throw new Error('Scene not initialized');
     }
 
-    return memoryData;
+    const usage: MemoryUsageData = {
+      total: 0,
+      byType: Object.values(AssetType).reduce((acc, type) => {
+        acc[type] = 0;
+        return acc;
+      }, {} as Record<AssetType, number>),
+      largestAssets: [],
+    };
+
+    // Calculate memory usage for each asset
+    for (const [key, assetInfo] of this.assets.entries()) {
+      if (this.scene.textures.exists(key)) {
+        const texture = this.scene.textures.get(key);
+        const size = texture.source[0].width * texture.source[0].height * 4;
+        usage.total += size;
+        usage.byType[AssetType.IMAGE] += size;
+      }
+      const json = this.scene.cache.json.get(key);
+      if (json) {
+        const size = JSON.stringify(json).length;
+        usage.total += size;
+        usage.byType[AssetType.JSON] += size;
+      }
+    }
+
+    // Sort assets by size
+    usage.largestAssets = Object.entries(usage.byType)
+      .map(([type, size]) => ({
+        key: type,
+        size,
+        type: type as AssetType,
+      }))
+      .sort((a, b) => b.size - a.size)
+      .slice(0, 10);
+
+    return usage;
   }
 
   /**
@@ -1749,5 +1433,119 @@ export class AssetService implements IAssetService {
         `[AssetService] Released group "${groupId}": ${releasedAssets.length} assets released`
       );
     }
+  }
+
+  // IService implementation
+  getStatus(): ServiceStatus {
+    return this.status;
+  }
+
+  getScene(): Phaser.Scene | null {
+    return this.currentScene;
+  }
+
+  setScene(scene: Phaser.Scene | null): void {
+    this.setCurrentScene(scene);
+  }
+
+  getPriority(): number {
+    return 1; // High priority as other services may depend on assets
+  }
+
+  getDependencies(): string[] {
+    return ['eventBus']; // Only depends on EventBusService
+  }
+
+  async onInit(scene: Phaser.Scene): Promise<void> {
+    this.scene = scene;
+    this.currentScene = scene;
+    this.status = ServiceStatus.CREATED;
+  }
+
+  async onStart(scene: Phaser.Scene): Promise<void> {
+    this.scene = scene;
+    this.currentScene = scene;
+    this.status = ServiceStatus.STARTED;
+  }
+
+  async onPause(scene: Phaser.Scene): Promise<void> {
+    this.scene = scene;
+    this.currentScene = scene;
+    this.status = ServiceStatus.PAUSED;
+    this.emitEvent('asset.state.changed', {
+      key: 'service',
+      previousState: 'loaded',
+      newState: 'registered'
+    });
+  }
+
+  async onResume(scene: Phaser.Scene): Promise<void> {
+    this.scene = scene;
+    this.currentScene = scene;
+    this.status = ServiceStatus.RESUMED;
+    this.emitEvent('asset.state.changed', {
+      key: 'service',
+      previousState: 'registered',
+      newState: 'loaded'
+    });
+  }
+
+  async onStop(scene: Phaser.Scene): Promise<void> {
+    this.scene = scene;
+    this.currentScene = scene;
+    this.status = ServiceStatus.SHUTDOWN;
+    this.emitEvent('asset.state.changed', {
+      key: 'service',
+      previousState: 'loaded',
+      newState: 'released'
+    });
+  }
+
+  async onDestroy(scene: Phaser.Scene): Promise<void> {
+    this.status = ServiceStatus.DESTROYED;
+    // Clean up scene-specific resources
+    this.releaseSceneAssets(scene);
+    this.sceneAssets.delete(scene);
+    this.sceneMemoryUsage.delete(scene);
+    this.sceneLoadingStatus.delete(scene);
+  }
+
+  // ILifecycleAssetService implementation
+  getCurrentScene(): Phaser.Scene | null {
+    return this.currentScene;
+  }
+
+  setCurrentScene(scene: Phaser.Scene | null): void {
+    if (this.currentScene === scene) {
+      return;
+    }
+
+    // Clean up old scene if needed
+    if (this.currentScene) {
+      this.releaseSceneAssets(this.currentScene);
+    }
+
+    this.currentScene = scene;
+  }
+
+  getSceneAssets(scene: Phaser.Scene): string[] {
+    const assets = this.sceneAssets.get(scene);
+    return assets ? Array.from(assets) : [];
+  }
+
+  releaseSceneAssets(scene: Phaser.Scene): void {
+    const assets = this.getSceneAssets(scene);
+    for (const key of assets) {
+      this.releaseAsset(key);
+    }
+    this.sceneAssets.delete(scene);
+  }
+
+  getSceneMemoryUsage(scene: Phaser.Scene): number {
+    return this.sceneMemoryUsage.get(scene) ?? 0;
+  }
+
+  getSceneLoadingStatus(scene: Phaser.Scene): { loaded: number; total: number; inProgress: string[] } {
+    return this.sceneLoadingStatus.get(scene) ?? { loaded: 0, total: 0, inProgress: [] };
   }
 }
