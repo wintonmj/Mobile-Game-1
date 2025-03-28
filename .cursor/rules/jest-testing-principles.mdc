@@ -1,0 +1,262 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # Jest Testing Principles
+
+## Mock Implementation Patterns
+
+### Singleton Mock Pattern
+**Description:** Use a singleton pattern for services/controllers that maintain state between tests.
+
+**When to use:**
+- For mocking stateful services that should maintain consistency across test cases
+- When multiple components depend on the same service instance
+
+**When to use alternatives:**
+- For stateless utilities, simple factory functions may be sufficient
+- When the mock doesn't need to maintain state between tests
+
+**Example:**
+```typescript
+// MockLoggerService.ts
+export const mockFunctions = {
+  log: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+};
+
+class MockLoggerService {
+  private static instance: MockLoggerService;
+  
+  static getInstance(): MockLoggerService {
+    if (!MockLoggerService.instance) {
+      MockLoggerService.instance = new MockLoggerService();
+    }
+    return MockLoggerService.instance;
+  }
+  
+  log = mockFunctions.log;
+  error = mockFunctions.error;
+  debug = mockFunctions.debug;
+}
+
+export default MockLoggerService;
+```
+
+### Factory Function Pattern
+**Description:** Create utility functions that return pre-configured mock objects.
+
+**When to use:**
+- For complex objects that require specific configuration
+- When the same mock object is needed across multiple tests
+- When you need to customize mock behavior per test
+
+**When to use alternatives:**
+- For simple objects, inline jest.mock() may be sufficient
+- For stateful services that need to maintain consistency, use the Singleton pattern
+
+**Example:**
+```typescript
+// TestUtils.ts
+export function createMockScene(config = {}): Phaser.Scene {
+  return {
+    add: {
+      sprite: jest.fn().mockReturnValue({
+        setOrigin: jest.fn().mockReturnThis(),
+        setScale: jest.fn().mockReturnThis(),
+        setDepth: jest.fn().mockReturnThis(),
+      }),
+    },
+    physics: {
+      add: {
+        sprite: jest.fn().mockReturnValue({
+          setOrigin: jest.fn().mockReturnThis(),
+          setScale: jest.fn().mockReturnThis(),
+          setDepth: jest.fn().mockReturnThis(),
+          setCollideWorldBounds: jest.fn().mockReturnThis(),
+        }),
+      },
+    },
+    ...config
+  } as unknown as Phaser.Scene;
+}
+```
+
+## In-Memory Mocking
+
+### Stateful Service Mocking
+**Description:** Implement in-memory versions of stateful services for realistic testing.
+
+**When to use:**
+- When testing components that interact with external systems (files, network, etc.)
+- When you need to simulate complex behavior including errors
+- When you need to verify side effects
+
+**When to use alternatives:**
+- For simple dependencies, jest.fn() mocks are sufficient
+- When you only need to verify function calls, not behavior
+
+**Example:**
+```typescript
+// fs.mock.ts
+const mockFileSystem: Record<string, string> = {};
+
+export const writeFile = jest.fn(
+  (path: string, data: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (path.includes('error')) {
+        reject(new Error('Mock file write error'));
+        return;
+      }
+      mockFileSystem[path] = data;
+      resolve();
+    });
+  }
+);
+
+export const readFile = jest.fn(
+  (path: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (path.includes('error')) {
+        reject(new Error('Mock file read error'));
+        return;
+      }
+      if (!mockFileSystem[path]) {
+        reject(new Error(`File not found: ${path}`));
+        return;
+      }
+      resolve(mockFileSystem[path]);
+    });
+  }
+);
+```
+
+## Test Organization
+
+### AAA Pattern (Arrange-Act-Assert)
+**Description:** Structure tests using the Arrange-Act-Assert pattern for clarity.
+
+**When to use:**
+- For all unit tests
+- When testing specific functionality in isolation
+
+**When to use alternatives:**
+- For complex integration tests, consider using a more descriptive setup
+
+**Example:**
+```typescript
+test('should process player input correctly', () => {
+  // Arrange
+  const mockScene = createMockScene();
+  const player = createMockPlayer(mockScene);
+  const inputController = new InputController();
+  
+  // Act
+  inputController.update();
+  
+  // Assert
+  expect(player.move).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
+});
+```
+
+### Test Suite Setup
+**Description:** Use consistent beforeEach/afterEach for setup and cleanup.
+
+**When to use:**
+- When multiple tests share the same setup
+- When you need to reset mocks between tests
+
+**When to use alternatives:**
+- For tests with unique setup requirements, inline setup may be clearer
+
+**Example:**
+```typescript
+describe('GameController', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Additional setup
+  });
+  
+  afterEach(() => {
+    // Cleanup
+  });
+  
+  // Tests...
+});
+```
+
+## Integration Testing
+
+### Component Interaction Testing
+**Description:** Test how multiple components interact together.
+
+**When to use:**
+- When testing complex workflows spanning multiple components
+- When verifying that components work correctly together
+- For critical application paths
+
+**When to use alternatives:**
+- For basic component functionality, unit tests are more appropriate
+- When debugging specific issues, focused unit tests are easier to maintain
+
+**Example:**
+```typescript
+// GameFlow.test.ts
+test('should handle complete game flow correctly', () => {
+  // Setup game components
+  const mockScene = createMockScene();
+  const gameController = new GameController(mockScene);
+  const player = createMockPlayer(mockScene);
+  
+  // Simulate game initialization
+  gameController.init();
+  
+  // Simulate game events
+  gameController.startGame();
+  player.emitEvent('collectItem', { itemId: 'coin' });
+  
+  // Verify correct interactions
+  expect(mockScene.sound.play).toHaveBeenCalledWith('collectSound');
+  expect(gameController.getScore()).toBe(100);
+});
+```
+
+## Error Testing
+
+### Structured Error Testing
+**Description:** Test error conditions with specific expected outcomes.
+
+**When to use:**
+- When testing component behavior under error conditions
+- When validating error handling logic
+
+**When to use alternatives:**
+- For happy path testing, focus on expected behavior
+
+**Example:**
+```typescript
+// BrowserErrorDetection.test.ts
+test('should handle and log browser errors', async () => {
+  // Setup
+  const mockErrorEvent = new ErrorEvent('error', {
+    message: 'Test error',
+    filename: 'test.js',
+    lineno: 10,
+    colno: 5,
+  });
+  
+  // Trigger error
+  window.dispatchEvent(mockErrorEvent);
+  
+  // Verify error handling
+  expect(MockLoggerService.getInstance().error).toHaveBeenCalledWith(
+    expect.stringContaining('Test error'),
+    expect.objectContaining({
+      filename: 'test.js',
+      line: 10,
+      column: 5,
+    })
+  );
+}); 

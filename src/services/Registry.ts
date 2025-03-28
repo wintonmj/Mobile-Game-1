@@ -1,11 +1,22 @@
-export interface Service {
-  initialize?: () => Promise<void>;
-  shutdown?: () => Promise<void>;
-  onRegister?: () => void;
-  onUnregister?: () => void;
+import { IRegistry, Service } from './interfaces/IRegistry';
+
+// Re-export the Service type
+export { Service };
+
+export interface IRegistryService extends Service {
+  registerService<T extends Service>(serviceId: string, serviceInstance: T): void;
+  getService<T>(serviceId: string): T;
+  hasService(serviceId: string): boolean;
+  unregisterService(serviceId: string): void;
+  clear(): void;
+  registerDependencies(serviceId: string, dependencyIds: string[]): void;
+  getServiceDependencies(serviceId: string): string[];
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  initializeBasicServices(): void;
 }
 
-export class Registry {
+export class Registry implements IRegistry {
   private services: Map<string, Service> = new Map();
   private dependencies: Map<string, Set<string>> = new Map();
   private initialized: boolean = false;
@@ -174,6 +185,18 @@ export class Registry {
 
     if (errors.length > 0) {
       throw new Error(`Shutdown failed: ${errors.map((e) => e.message).join(', ')}`);
+    }
+  }
+
+  /**
+   * Initializes the registry with basic services required by the application
+   * This includes the EventBusService that's used for decoupled communication
+   */
+  initializeBasicServices(): void {
+    if (!this.hasService('eventBus')) {
+      // Dynamically import to avoid circular dependencies
+      const { EventBusService } = require('./EventBusService');
+      this.registerService('eventBus', new EventBusService());
     }
   }
 }

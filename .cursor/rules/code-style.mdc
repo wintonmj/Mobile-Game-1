@@ -3,18 +3,78 @@ description:
 globs: 
 alwaysApply: true
 ---
- Code Style Guidelines
-Use single quotes for strings
-Use 2 spaces for indentation
-Maximum line length of 100 characters
-Always use semicolons
-Use camelCase for variables, functions, and method names
-Use PascalCase for classes, interfaces, and type names
+File Structure and Organization
+Follow MVC (Model-View-Controller) architecture
+Group related functionality into appropriate directories (models, views, controllers, utils, services)
+Keep files focused on a single responsibility
+Maximum file length: 300 lines (refactor if longer)
+Organize code within files: imports first, followed by interfaces/types, then classes/functions
+Naming Conventions
+Use PascalCase for classes, interfaces, types, and enums
+Example: PlayerView, InputController, Direction
+Use camelCase for variables, functions, methods, and properties
+Example: getPosition(), isWalking, toggleCarrying()
 Use UPPER_SNAKE_CASE for constants
-Group imports by type (standard library, third-party, local)
-Prefer arrow functions for anonymous functions
-Avoid files longer than 300 lines (refactor if necessary)
-Always add access modifiers (public, private, protected) to class members
-Use async/await instead of raw promises
-Add meaningful comments for complex logic
-Write descriptive variable and function names
+Prefix interfaces with 'I' if they are for implementation inheritance
+Use descriptive, meaningful names that convey purpose
+Type Definitions
+Always define explicit types, avoid 'any' type
+Use TypeScript interfaces for complex object shapes
+Define type aliases for function signatures and union types
+Use generic types when appropriate
+Export types that are used across multiple files
+Use type narrowing with type guards when necessary
+Classes and Objects
+Use access modifiers for all class members (public, private, protected)
+Initialize class properties either in declaration or constructor
+Prefer readonly for properties that won't change after initialization
+Use getters/setters for properties that need controlled access
+Document complex class behavior with JSDoc comments
+Functions and Methods
+Specify return types for all functions and methods
+Use void type for functions that don't return a value
+Use arrow functions for anonymous functions and callbacks
+Keep functions small and focused on a single task
+Prefer named parameters for complex function signatures
+Code Formatting
+Use 2 spaces for indentation
+Use single quotes for strings
+Always end statements with semicolons
+Maximum line length: 100 characters
+Use trailing commas in multi-line object and array literals
+Place opening braces on the same line as their statement
+Add a space before the opening parenthesis in control statements (if, while, etc.)
+No space between function name and parentheses for function calls
+Imports and Exports
+Group imports by source: built-in/external libraries first, then project imports
+Sort imports alphabetically within each group
+Use named exports rather than default exports for consistency
+Use explicit import statements rather than wildcard imports
+Error Handling
+Use explicit null/undefined checking
+Implement proper error handling with try/catch blocks where appropriate
+Use non-null assertion operator (!) only when you're certain a value isn't null/undefined
+Prefer optional chaining (?.) and nullish coalescing (??) for handling potential null/undefined values
+Interfaces and Types
+Prefer interfaces for object shapes that will be implemented or extended
+Use type aliases for unions, intersections, and simple object types
+Export interfaces and types that are shared between files
+Keep interface definitions focused and cohesive
+Comments and Documentation
+Use JSDoc comments for public APIs and complex functions
+Keep comments focused on why, not what (code should be self-documenting)
+Update comments when code changes
+Document complex algorithms and business logic
+Avoid commented-out code
+Performance and Best Practices
+Avoid excessive type casting
+Use async/await for asynchronous operations instead of raw promises
+Minimize use of any type and type assertions
+Use proper TypeScript utility types (Partial, Readonly, Record, etc.)
+Avoid deeply nested code structures
+Testing
+Write tests for all public APIs
+Use descriptive test names that indicate what is being tested
+Structure tests with arrange-act-assert pattern
+Mock dependencies appropriately for unit tests
+This style guide reflects the patterns observed in the existing codebase and promotes consistency, readability, and maintainability for TypeScript files.

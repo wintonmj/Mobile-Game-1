@@ -4,6 +4,22 @@ import { Player } from '../models/Player';
 import { Dungeon } from '../models/Dungeon';
 import { Actions } from '../models/Actions';
 import { ObjectPlacementController } from './ObjectPlacementController';
+import { IEventBusService } from '../services/interfaces/IEventBusService';
+import { IRegistry } from '../services/interfaces/IRegistry';
+
+// Define event names as constants to ensure consistency
+export const GameEvents = {
+  PLAYER: {
+    MOVED: 'player.moved',
+    ACTION_CHANGED: 'player.action.changed',
+    DIRECTION_CHANGED: 'player.direction.changed',
+    COLLISION: 'player.collision'
+  },
+  GAME: {
+    INITIALIZED: 'game.initialized',
+    UPDATED: 'game.updated'
+  }
+};
 
 interface PlayerView {
   onActionComplete: () => void;
@@ -21,14 +37,23 @@ export class GameController {
   public dungeon: Dungeon;
   public objectPlacementController: ObjectPlacementController;
   private lastUpdate: number;
+  private eventBus: IEventBusService | null = null;
 
-  constructor(scene: GameScene, dungeon?: Dungeon) {
+  constructor(scene: GameScene, dungeon?: Dungeon, registry?: IRegistry) {
     this.scene = scene;
     this.player = new Player();
     this.dungeon = dungeon || new Dungeon();
     this.objectPlacementController = new ObjectPlacementController(this.dungeon);
     this.inputController = new InputController(scene, this.player);
     this.lastUpdate = 0;
+
+    // Get the EventBusService from the registry if available
+    if (registry) {
+      this.eventBus = registry.getService('eventBus') as IEventBusService;
+    } else if ((window as any).gameRegistry) {
+      // Fallback to global registry if available
+      this.eventBus = (window as any).gameRegistry.getService('eventBus') as IEventBusService;
+    }
   }
 
   public init(): void {
@@ -49,7 +74,17 @@ export class GameController {
     if (this.scene.playerView) {
       this.scene.playerView.onActionComplete = () => {
         this.player.setAction(Actions.IDLE);
+        // Emit event when action completes
+        this.emitActionChanged(Actions.IDLE);
       };
+    }
+
+    // Emit game initialized event
+    if (this.eventBus) {
+      this.eventBus.emit(GameEvents.GAME.INITIALIZED, {
+        playerPosition: this.player.getPosition(),
+        dungeonSize: this.dungeon.getSize()
+      });
     }
   }
 
@@ -69,6 +104,11 @@ export class GameController {
       currentAction === Actions.CARRY_WALK ||
       currentAction === Actions.CARRY_RUN;
 
+    // Store the initial position and action for comparison later
+    const initialPosition = { ...this.player.getPosition() };
+    const initialAction = this.player.getCurrentAction();
+    const initialDirection = this.player.getDirection();
+
     // Handle all possible actions first
     this._handleActions();
 
@@ -79,6 +119,61 @@ export class GameController {
 
     // Update the view
     this.scene.updatePlayerSprite(this.player);
+
+    // Check if position, action, or direction changed and emit events if needed
+    const currentPosition = this.player.getPosition();
+    if (currentPosition.x !== initialPosition.x || currentPosition.y !== initialPosition.y) {
+      this.emitPlayerMoved(currentPosition);
+    }
+
+    if (this.player.getCurrentAction() !== initialAction) {
+      this.emitActionChanged(this.player.getCurrentAction() as Actions);
+    }
+
+    if (this.player.getDirection() !== initialDirection) {
+      this.emitDirectionChanged(this.player.getDirection());
+    }
+
+    // Emit game update event
+    if (this.eventBus) {
+      this.eventBus.emit(GameEvents.GAME.UPDATED, {
+        deltaTime: this.scene.game.loop.delta / 1000
+      });
+    }
+  }
+
+  // Helper methods to emit events
+  private emitPlayerMoved(position: { x: number, y: number }): void {
+    if (this.eventBus) {
+      this.eventBus.emit(GameEvents.PLAYER.MOVED, {
+        x: position.x,
+        y: position.y,
+        tileX: Math.floor(position.x / this.dungeon.tileSize),
+        tileY: Math.floor(position.y / this.dungeon.tileSize)
+      });
+    }
+  }
+
+  private emitActionChanged(action: Actions): void {
+    if (this.eventBus) {
+      this.eventBus.emit(GameEvents.PLAYER.ACTION_CHANGED, {
+        action,
+        isInterruptible: [
+          Actions.IDLE,
+          Actions.MOVING,
+          Actions.WALKING,
+          Actions.CARRY_IDLE,
+          Actions.CARRY_WALK,
+          Actions.CARRY_RUN
+        ].includes(action)
+      });
+    }
+  }
+
+  private emitDirectionChanged(direction: string): void {
+    if (this.eventBus) {
+      this.eventBus.emit(GameEvents.PLAYER.DIRECTION_CHANGED, { direction });
+    }
   }
 
   private _handleActions(): void {
@@ -152,6 +247,14 @@ export class GameController {
       const newX = playerPosition.x + deltaX;
       if (!this._wouldCollide(newX, playerPosition.y)) {
         this.player.setPosition(newX, playerPosition.y);
+      } else if (this.eventBus) {
+        // Emit collision event
+        this.eventBus.emit(GameEvents.PLAYER.COLLISION, {
+          direction: deltaX > 0 ? 'right' : 'left',
+          position: { x: newX, y: playerPosition.y },
+          tileX: Math.floor(newX / this.dungeon.tileSize),
+          tileY: Math.floor(playerPosition.y / this.dungeon.tileSize)
+        });
       }
     }
 
@@ -160,6 +263,14 @@ export class GameController {
       const newY = playerPosition.y + deltaY;
       if (!this._wouldCollide(playerPosition.x, newY)) {
         this.player.setPosition(playerPosition.x, newY);
+      } else if (this.eventBus) {
+        // Emit collision event
+        this.eventBus.emit(GameEvents.PLAYER.COLLISION, {
+          direction: deltaY > 0 ? 'down' : 'up',
+          position: { x: playerPosition.x, y: newY },
+          tileX: Math.floor(playerPosition.x / this.dungeon.tileSize),
+          tileY: Math.floor(newY / this.dungeon.tileSize)
+        });
       }
     }
   }

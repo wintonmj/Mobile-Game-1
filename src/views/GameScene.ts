@@ -4,6 +4,7 @@ import { NPC } from '../models/NPC';
 import { Dungeon } from '../models/Dungeon';
 import { PlayerView } from './PlayerView';
 import { NPCView } from './NPCView';
+import { IRegistry } from '../services/interfaces/IRegistry';
 
 // Create a more specific type for our scene objects
 interface GameObject {
@@ -90,8 +91,15 @@ export class GameScene {
   }
 
   create(): void {
+    // Get the registry from the window global
+    const registry = (window as any).gameRegistry as IRegistry | undefined;
+
     // TypeScript doesn't know about the scene structure, so we use type assertion
-    this.controller = new GameController(this as unknown as GameController['scene']);
+    this.controller = new GameController(
+      this as unknown as GameController['scene'],
+      undefined, // Use default dungeon
+      registry // Pass the registry to enable EventBus
+    );
     this.controller.init();
 
     const dungeon = this.controller.dungeon;

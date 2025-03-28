@@ -1,8 +1,14 @@
 import { GameScene } from './views/GameScene';
 import { PhaserLoader } from './models/PhaserLoader';
+import { Registry } from './services/Registry';
 
 // Use async loading to initialize the game
 async function startGame() {
+  // Initialize services
+  const registry = new Registry();
+  registry.initializeBasicServices(); // Registers EventBusService by default
+  await registry.initialize();
+
   // Dynamically import Phaser
   const Phaser = await PhaserLoader.load();
 
@@ -18,10 +24,19 @@ async function startGame() {
         debug: false,
       },
     },
-    scene: GameScene,
+    scene: [GameScene]
   };
 
-  new Phaser.Game(config);
+  // Make registry available for scenes to use
+  (window as any).gameRegistry = registry;
+
+  const game = new Phaser.Game(config);
+
+  // Add event listener for when the game is about to be destroyed
+  window.addEventListener('beforeunload', () => {
+    registry.shutdown().catch(err => console.error('Error shutting down services:', err));
+    game.destroy(true);
+  });
 }
 
 // Start the game when the page loads

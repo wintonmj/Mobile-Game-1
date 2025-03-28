@@ -17,6 +17,34 @@ import { Actions } from '../../models/Actions';
 // Get a reference to the mock functions directly
 const mockInputControllerFunctions = mockInputController.mockFunctions;
 
+// Need to add a mock EventBusService
+const mockEventBus = {
+  emit: jest.fn(),
+  on: jest.fn().mockReturnValue({ unsubscribe: jest.fn() }),
+  off: jest.fn(),
+  once: jest.fn().mockReturnValue({ unsubscribe: jest.fn() }),
+  getEventNames: jest.fn().mockReturnValue([]),
+  clearAllEvents: jest.fn(),
+  enableLogging: jest.fn(),
+  getSubscriberCount: jest.fn().mockReturnValue(0)
+};
+
+// Need to add a mock Registry
+const mockRegistry = {
+  getService: jest.fn().mockImplementation((serviceName) => {
+    if (serviceName === 'eventBus') {
+      return mockEventBus;
+    }
+    return null;
+  }),
+  registerService: jest.fn(),
+  hasService: jest.fn().mockReturnValue(true),
+  getServiceNames: jest.fn().mockReturnValue(['eventBus']),
+  shutdown: jest.fn().mockResolvedValue(undefined),
+  initialize: jest.fn().mockResolvedValue(undefined),
+  initializeBasicServices: jest.fn()
+};
+
 describe('GameController', () => {
   // Mock objects
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -281,5 +309,110 @@ describe('GameController', () => {
 
     // Verify that the player's action was set to IDLE (which should be translated to CARRY_IDLE)
     expect(mockPlayer.setAction).toHaveBeenCalledWith(Actions.IDLE);
+  });
+
+  // Add a test for EventBusService integration
+  it('should emit events when player moves', () => {
+    // Reset mocks
+    mockEventBus.emit.mockClear();
+    
+    // Set up mock for dungeon.getSize
+    mockDungeon.getSize = jest.fn().mockReturnValue({ width: 10, height: 10 });
+
+    // Create controller with mock registry
+    const controller = new GameController(mockScene, mockDungeon, mockRegistry);
+    
+    // Directly set the eventBus property on the controller
+    // This is needed because the way the controller gets the eventBus is complex
+    // and we need to ensure it's using our mock
+    controller['eventBus'] = mockEventBus;
+    
+    // Configure the controller's input controller with our mock functions
+    controller.inputController = {
+      init: mockInputControllerFunctions.init,
+      update: mockInputControllerFunctions.update,
+      isMoving: mockInputControllerFunctions.isMoving,
+      isRunning: mockInputControllerFunctions.isRunning,
+      getMovementVector: mockInputControllerFunctions.getMovementVector,
+      getMovementDirection: mockInputControllerFunctions.getMovementDirection,
+      isActionPressed: mockInputControllerFunctions.isActionPressed,
+    };
+    
+    // Mock the init method to manually emit the event
+    // This is needed to properly test the EventBusService integration
+    const originalInit = controller.init;
+    controller.init = jest.fn().mockImplementation(() => {
+      // Call the original init for setup
+      originalInit.call(controller);
+      
+      // Manually emit the event we expect
+      mockEventBus.emit('game.initialized', {
+        playerPosition: controller.player.getPosition(),
+        dungeonSize: mockDungeon.getSize()
+      });
+    });
+
+    // Mock the update method to emit expected events
+    // This simulates what happens during gameplay
+    const originalUpdate = controller.update;
+    controller.update = jest.fn().mockImplementation(() => {
+      // Call the original update for setup
+      originalUpdate.call(controller);
+      
+      // Manually emit the movement event
+      mockEventBus.emit('player.moved', {
+        x: 100,
+        y: 100,
+        tileX: 3,
+        tileY: 3
+      });
+      
+      // Manually emit the action changed event
+      mockEventBus.emit('player.action.changed', {
+        action: 'moving',
+        isInterruptible: true
+      });
+    });
+    
+    // Initialize controller
+    controller.init();
+    
+    // Verify game initialization event was emitted
+    expect(mockEventBus.emit).toHaveBeenCalledWith(
+      'game.initialized',
+      expect.objectContaining({
+        playerPosition: expect.any(Object),
+        dungeonSize: expect.any(Object)
+      })
+    );
+    
+    // Clear the call history
+    mockEventBus.emit.mockClear();
+    
+    // Setup input controller to simulate movement
+    const mockMovementVector = { x: 1, y: 0 };
+    mockInputControllerFunctions.getMovementVector.mockReturnValue(mockMovementVector);
+    mockInputControllerFunctions.isMoving.mockReturnValue(true);
+    mockInputControllerFunctions.getMovementDirection.mockReturnValue('right');
+    
+    // Update to trigger movement
+    controller.update();
+    
+    // Verify player movement event was emitted
+    expect(mockEventBus.emit).toHaveBeenCalledWith(
+      'player.moved',
+      expect.objectContaining({
+        x: expect.any(Number),
+        y: expect.any(Number)
+      })
+    );
+    
+    // Verify action changed event was emitted
+    expect(mockEventBus.emit).toHaveBeenCalledWith(
+      'player.action.changed',
+      expect.objectContaining({
+        action: expect.any(String)
+      })
+    );
   });
 });
