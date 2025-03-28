@@ -50,7 +50,7 @@ export const KnightAnimations: NPCAnimationConfig = {
 
 export class NPCAnimationLoader extends BaseAnimationLoader {
   // NPC-specific base path
-  private static readonly NPC_BASE_PATH = "assets/sprites/Entities/Npc's/";
+  private static readonly NPC_BASE_PATH = "/src/assets/sprites/Entities/Npc's/";
   private npcType: string;
   private animationConfigs: NPCAnimationConfig;
   private loaded: boolean = false;
@@ -94,43 +94,63 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
   public preloadAnimations(): void {
     try {
       const basePath = `${NPCAnimationLoader.NPC_BASE_PATH}${this.npcType}/`;
+      console.log(`Base path for ${this.npcType} animations: ${basePath}`);
 
-      // Remove 'src/' from path - assets should be in the public folder
+      // Attempt to load animations
       if (this.npcType === 'Knight') {
-        // For Knight, load a simple fallback spritesheet
+        // For Knight, try multiple possible paths for the sprite sheet
         const key = 'knight_idle_sheet';
-        const path = `${basePath}${this.animationConfigs.idle.spriteBase}/Idle-Sheet.png`;
+        const possiblePaths = [
+          // Absolute path from root
+          `/src/assets/sprites/Entities/Npc's/Knight/Idle/Idle-Sheet.png`,
+          // Relative path with potential src prefix
+          `src/assets/sprites/Entities/Npc's/Knight/Idle/Idle-Sheet.png`,
+          // Relative path without src prefix (traditional assets folder pattern)
+          `assets/sprites/Entities/Npc's/Knight/Idle/Idle-Sheet.png`,
+          // Direct path from base path
+          `${basePath}Idle/Idle-Sheet.png`
+        ];
 
+        // Print all paths we're going to try
+        console.log('Attempting to load Knight spritesheet from these paths:');
+        possiblePaths.forEach(path => console.log(`- ${path}`));
+
+        // Try each path
+        let loaded = false;
+        
         // Check if already loaded to prevent duplicate loading
         if (!this.scene.textures.exists(key)) {
           // Add specific file complete listener for this asset
           this.scene.load.on('filecomplete-spritesheet-' + key, () => {
             console.log(`Knight spritesheet loaded successfully: ${key}`);
+            loaded = true;
             this.loaded = true;
             this.createAnimations();
           });
 
-          // Add specific file error listener for this asset
+          // Add specific file error listener for all files
           this.scene.load.on('fileerror', (file: Phaser.Loader.File) => {
-            if (file.key === key) {
-              console.warn(`Failed to load Knight spritesheet: ${path}`);
-              this.loaded = true; // Mark as loaded anyway so we can continue with fallbacks
-              this.createAnimations();
+            console.error(`Failed to load file: ${file.key}`, file);
+          });
+
+          // Try all possible paths
+          for (const path of possiblePaths) {
+            if (!loaded) {
+              console.log(`Trying to load knight sprite from: ${path}`);
+              this.scene.load.spritesheet(key, path, {
+                frameWidth: 32,
+                frameHeight: 32,
+              });
+              
+              // Start loading if not already in progress
+              if (this.scene.load.isLoading() === false) {
+                this.scene.load.start();
+              }
             }
-          });
-
-          // Use correct frame dimensions for Knight sprite sheet (128x32 with 4 frames = 32x32 per frame)
-          this.scene.load.spritesheet(key, path, {
-            frameWidth: 32,
-            frameHeight: 32,
-          });
-
-          // Start loading if not already in progress
-          if (this.scene.load.isLoading() === false) {
-            this.scene.load.start();
           }
         } else {
           // If already loaded, just create the animations
+          console.log('Knight spritesheet already loaded, creating animations');
           this.loaded = true;
           this.createAnimations();
         }
@@ -152,7 +172,8 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
         const spriteKey = 'knight_idle_sheet';
 
         if (!this.scene.textures.exists(spriteKey)) {
-          console.warn(`Texture ${spriteKey} does not exist yet`);
+          console.warn(`Texture ${spriteKey} does not exist yet, will create fallback animation`);
+          this.createStaticFallbackAnimation();
           return;
         }
 
@@ -160,8 +181,10 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
         const textureSource = this.scene.textures.get(spriteKey);
         const frameCount = textureSource.frameTotal;
 
+        console.log(`Found ${frameCount} frames for texture ${spriteKey}`);
+
         if (frameCount <= 0) {
-          console.warn(`Texture ${spriteKey} has no frames available`);
+          console.warn(`Texture ${spriteKey} has no frames available, will create fallback animation`);
           this.createStaticFallbackAnimation();
           return;
         }
@@ -169,6 +192,8 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
         // For the Knight sprite sheet, we know there are 4 frames (128x32 with 32x32 frames)
         const actualFrameCount = 4;
         const maxFrame = Math.min(actualFrameCount - 1, frameCount - 1);
+
+        console.log(`Creating animations for Knight with ${maxFrame + 1} frames from spritesheet ${spriteKey}`);
 
         // Create animations for all directions using the same sprite
         ['down', 'up', 'left', 'right'].forEach((direction) => {
@@ -181,12 +206,13 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
                 key: animKey,
                 frames: this.scene.anims.generateFrameNumbers(spriteKey, {
                   start: 0,
-                  end: maxFrame, // Use only available frames (should be 3)
+                  end: maxFrame, // Use only available frames
                 }),
                 frameRate: 8,
                 repeat: -1,
                 yoyo: false,
               });
+              console.log(`Successfully created animation: ${animKey}`);
 
               // Also create talk animation as a copy of idle for now
               const talkKey = `talk_${direction}`;
@@ -201,6 +227,7 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
                   repeat: -1,
                   yoyo: false,
                 });
+                console.log(`Successfully created animation: ${talkKey}`);
               }
             } catch (error) {
               console.error(`Error creating animation ${animKey}:`, error);

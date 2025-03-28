@@ -61,13 +61,22 @@ export class NPCView {
 
       // If we've reached maximum attempts, stop trying
       if (attempts >= maxAttempts) {
-        console.warn('Gave up waiting for animations to load');
+        console.warn(`Gave up waiting for animations to load for ${this.npcType}`);
+        
+        // Try to show at least something even if animations failed
+        if (this.sprite && this.sprite.setFrame) {
+          this.sprite.setFrame(0);
+        }
         return;
       }
 
       // Check if animation exists and try to play it
-      const animKey = 'idle_down';
+      const animKey = `idle_down`;
+      
+      console.log(`Checking for animation ${animKey} (attempt ${attempts}/${maxAttempts})`);
+      
       if (this.scene.anims && this.scene.anims.exists(animKey)) {
+        console.log(`Animation ${animKey} found for ${this.npcType}, playing it`);
         this.animationsReady = true;
         this.playAnimation('idle', 'down');
       } else {
