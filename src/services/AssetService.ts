@@ -1012,33 +1012,6 @@ export class AssetService implements IAssetService {
   }
 
   /**
-   * Creates an asset group
-   * @param _groupId Group ID
-   * @param _assetKeys Array of asset keys
-   */
-  createGroup(_groupId: string, _assetKeys: string[]): void {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Loads an asset group
-   * @param _groupId Group ID
-   * @param _onProgress Progress callback
-   * @returns Promise that resolves when all assets in the group are loaded
-   */
-  loadGroup(_groupId: string, _onProgress?: (progress: number) => void): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Releases an asset group
-   * @param _groupId Group ID
-   */
-  releaseGroup(_groupId: string): void {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
    * Sets memory thresholds for warning and critical events
    * @param _warning Warning threshold in MB
    * @param _critical Critical threshold in MB
@@ -1084,5 +1057,150 @@ export class AssetService implements IAssetService {
     // For now, return undefined as this is a stub
     // In the actual implementation, this would retrieve options from wherever they are stored
     return undefined;
+  }
+
+  /**
+   * Creates an asset group with the specified ID and asset keys
+   * @param groupId Group ID
+   * @param assetKeys Array of asset keys to include in the group
+   * @throws Error if group already exists or if any asset key is invalid
+   */
+  createGroup(groupId: string, assetKeys: string[]): void {
+    // Validate parameters
+    if (!groupId || typeof groupId !== 'string') {
+      throw new Error('Group ID must be a non-empty string');
+    }
+
+    if (!Array.isArray(assetKeys) || assetKeys.length === 0) {
+      throw new Error('Asset keys must be a non-empty array');
+    }
+
+    // Check if group already exists
+    if (this.groups.has(groupId)) {
+      throw new Error(`Group with ID "${groupId}" already exists`);
+    }
+
+    // Validate that all asset keys exist in the registry
+    const invalidKeys: string[] = [];
+    for (const key of assetKeys) {
+      if (!this.assets.has(key)) {
+        invalidKeys.push(key);
+      }
+    }
+
+    if (invalidKeys.length > 0) {
+      throw new Error(
+        `Cannot create group "${groupId}": The following assets are not registered: ${invalidKeys.join(
+          ', '
+        )}`
+      );
+    }
+
+    // Create the group
+    this.groups.set(groupId, [...assetKeys]);
+
+    // Emit group creation event
+    this.emitEvent('asset.group.operation', {
+      groupId,
+      assetCount: assetKeys.length,
+      operation: 'created',
+    });
+
+    if (this.config.enableLogging) {
+      console.log(
+        `[AssetService] Created group "${groupId}" with ${assetKeys.length} assets: ${assetKeys.join(
+          ', '
+        )}`
+      );
+    }
+  }
+
+  /**
+   * Loads all assets in the specified group
+   * @param groupId Group ID
+   * @param onProgress Optional callback for loading progress (0-1)
+   * @returns Promise that resolves when all assets in the group are loaded
+   * @throws Error if group does not exist
+   */
+  loadGroup(groupId: string, onProgress?: (progress: number) => void): Promise<void> {
+    // Validate parameters
+    if (!groupId || typeof groupId !== 'string') {
+      return Promise.reject(new Error('Group ID must be a non-empty string'));
+    }
+
+    // Check if group exists
+    const assetKeys = this.groups.get(groupId);
+    if (!assetKeys) {
+      return Promise.reject(new Error(`Group with ID "${groupId}" does not exist`));
+    }
+
+    // Emit group loading event
+    this.emitEvent('asset.group.operation', {
+      groupId,
+      assetCount: assetKeys.length,
+      operation: 'loading',
+    });
+
+    if (this.config.enableLogging) {
+      console.log(`[AssetService] Loading group "${groupId}" with ${assetKeys.length} assets`);
+    }
+
+    // Create a loading promise that tracks all assets in the group
+    return this.preload(assetKeys, (progress) => {
+      // Forward progress to the callback if provided
+      if (onProgress) {
+        onProgress(progress);
+      }
+    }).then(() => {
+      // Emit group loaded event
+      this.emitEvent('asset.group.operation', {
+        groupId,
+        assetCount: assetKeys.length,
+        operation: 'loaded',
+      });
+
+      if (this.config.enableLogging) {
+        console.log(`[AssetService] Loaded group "${groupId}" successfully`);
+      }
+    });
+  }
+
+  /**
+   * Releases all assets in the specified group
+   * @param groupId Group ID
+   * @throws Error if group does not exist
+   */
+  releaseGroup(groupId: string): void {
+    // Validate parameters
+    if (!groupId || typeof groupId !== 'string') {
+      throw new Error('Group ID must be a non-empty string');
+    }
+
+    // Check if group exists
+    const assetKeys = this.groups.get(groupId);
+    if (!assetKeys) {
+      throw new Error(`Group with ID "${groupId}" does not exist`);
+    }
+
+    // Release each asset in the group
+    const releasedAssets: string[] = [];
+    for (const key of assetKeys) {
+      if (this.releaseAsset(key)) {
+        releasedAssets.push(key);
+      }
+    }
+
+    // Emit group released event
+    this.emitEvent('asset.group.operation', {
+      groupId,
+      assetCount: releasedAssets.length,
+      operation: 'released',
+    });
+
+    if (this.config.enableLogging) {
+      console.log(
+        `[AssetService] Released group "${groupId}": ${releasedAssets.length} assets released`
+      );
+    }
   }
 }
