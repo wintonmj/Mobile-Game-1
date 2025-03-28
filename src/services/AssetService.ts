@@ -94,6 +94,7 @@ export class AssetService implements IAssetService {
 
   // Loading state tracking
   private loadingPromises: Map<string, Promise<any>> = new Map();
+  private loadingMetrics: Map<string, { startTime: number; endTime?: number }> = new Map();
 
   // Event handling
   private eventBus: IEventBusService | null = null;
@@ -430,10 +431,37 @@ export class AssetService implements IAssetService {
   }
 
   /**
-   * Loads an asset
-   * @param key Asset key to load
+   * Gets an asset by its key and type
+   * @param key Asset key
+   * @param type Asset type
+   * @returns The loaded asset
+   * @private
+   */
+  private getAssetByType(
+    key: string,
+    type: AssetType
+  ): Phaser.GameObjects.GameObject | Phaser.Loader.FileTypes.AudioFile | Phaser.Textures.Texture | object {
+    switch (type) {
+      case AssetType.IMAGE:
+      case AssetType.SPRITE_SHEET:
+      case AssetType.ATLAS:
+        return this.scene.textures.get(key);
+      case AssetType.AUDIO:
+        return this.scene.sound.get(key);
+      case AssetType.JSON:
+        return this.scene.cache.json.get(key);
+      case AssetType.BITMAP_FONT:
+        return this.scene.cache.bitmapFont.get(key);
+      default:
+        throw new Error(`Unsupported asset type: ${type}`);
+    }
+  }
+
+  /**
+   * Loads a single asset
+   * @param key Asset key
    * @returns Promise that resolves with the loaded asset
-   * @throws Error if asset is not registered
+   * @throws Error if asset is not registered or fails to load
    */
   loadAsset(
     key: string
@@ -448,248 +476,204 @@ export class AssetService implements IAssetService {
       return Promise.reject(new Error('Asset key must be a non-empty string'));
     }
 
-    // Check if asset is already loaded
-    if (this.isLoaded(key)) {
-      return Promise.resolve(this.getAssetByKey(key));
-    }
-
-    // Check if asset is in loading progress
-    if (this.loadingPromises.has(key)) {
-      return this.loadingPromises.get(key)!;
-    }
-
-    // Get asset info
+    // Check if asset exists
     const assetInfo = this.assets.get(key);
     if (!assetInfo) {
       return Promise.reject(new Error(`Asset with key "${key}" is not registered`));
     }
 
-    // Create asset loading promise
+    // Check if already loaded
+    if (assetInfo.loaded) {
+      return Promise.resolve(this.getAssetByType(key, assetInfo.type));
+    }
+
+    // Check if already loading
+    if (this.loadingPromises.has(key)) {
+      return this.loadingPromises.get(key)!;
+    }
+
+    // Start loading time tracking
+    const startTime = performance.now();
+    this.loadingMetrics.set(key, { startTime });
+
+    // Emit load started event
+    this.emitEvent('asset.load.started', {
+      key,
+      type: assetInfo.type,
+      timestamp: startTime,
+    });
+
+    // Create loading promise
     const loadPromise = new Promise<
       | Phaser.GameObjects.GameObject
       | Phaser.Loader.FileTypes.AudioFile
       | Phaser.Textures.Texture
       | object
     >((resolve, reject) => {
-      // Update asset state
-      this.emitEvent('asset.state.changed', {
-        key,
-        previousState: 'registered',
-        newState: 'loading',
-      });
-
-      // Emit load started event
-      this.emitEvent('asset.load.started', {
-        key,
-        type: assetInfo.type,
-        timestamp: Date.now(),
-      });
-
-      const startTime = Date.now();
-
-      // Create a new loader for this asset
-      const loader = this.scene.load;
-
-      // Set up loader event handlers for this specific asset
-      const fileLoadProgressHandler = (file: Phaser.Loader.File) => {
-        if (file.key === key) {
-          this.emitEvent('asset.load.progress', {
-            key,
-            progress: file.percentComplete,
-            bytes: file.bytesLoaded,
-            totalBytes: file.bytesTotal,
-          });
+      try {
+        // Load based on asset type
+        switch (assetInfo.type) {
+          case AssetType.IMAGE:
+            this.scene.load.image(key, assetInfo.path);
+            break;
+          case AssetType.SPRITE_SHEET:
+            const options = this.getAssetOptions(key);
+            if (options?.frameConfig) {
+              this.scene.load.spritesheet(key, assetInfo.path, options.frameConfig);
+            } else if (options?.frameWidth && options?.frameHeight) {
+              this.scene.load.spritesheet(key, assetInfo.path, {
+                frameWidth: options.frameWidth,
+                frameHeight: options.frameHeight,
+                start: options.frameStart,
+                end: options.frameMax,
+              } as Phaser.Types.Loader.FileTypes.ImageFrameConfig);
+            } else {
+              throw new Error('Missing required frame configuration for spritesheet');
+            }
+            break;
+          case AssetType.ATLAS:
+            const atlasOptions = this.getAssetOptions(key);
+            if (atlasOptions?.atlasURL) {
+              this.scene.load.atlas(key, atlasOptions.atlasURL, assetInfo.path);
+            } else {
+              this.scene.load.atlas(key, assetInfo.path);
+            }
+            break;
+          case AssetType.AUDIO:
+            const audioOptions = this.getAssetOptions(key);
+            this.scene.load.audio(key, assetInfo.path, {
+              rate: audioOptions?.audioRate,
+              loop: audioOptions?.loop,
+            });
+            break;
+          case AssetType.JSON:
+            this.scene.load.json(key, assetInfo.path);
+            break;
+          case AssetType.BITMAP_FONT:
+            const fontOptions = this.getAssetOptions(key);
+            if (fontOptions?.dataURL) {
+              this.scene.load.bitmapFont(key, fontOptions.dataURL, assetInfo.path);
+            } else {
+              this.scene.load.bitmapFont(key, assetInfo.path);
+            }
+            break;
+          default:
+            throw new Error(`Unsupported asset type: ${assetInfo.type}`);
         }
-      };
 
-      const fileCompleteHandler = (file: string) => {
-        if (file === key) {
-          const loadTime = Date.now() - startTime;
+        // Start loading
+        this.scene.load.start();
 
+        // Handle load complete
+        this.scene.load.once(`complete`, () => {
+          const endTime = performance.now();
+          const duration = endTime - startTime;
+          
+          // Update loading metrics
+          this.loadingMetrics.set(key, { startTime, endTime });
+          
           // Update asset info
           assetInfo.loaded = true;
-          assetInfo.loadTime = loadTime;
-          assetInfo.lastUsed = Date.now();
-
-          // Remove from loading promises
-          this.loadingPromises.delete(key);
-
-          // Clean up loader event handlers
-          loader.off('fileprogress', fileLoadProgressHandler);
-          loader.off('filecomplete', fileCompleteHandler);
-          loader.off('fileerror', fileErrorHandler);
-
-          // Update asset state
-          this.emitEvent('asset.state.changed', {
-            key,
-            previousState: 'loading',
-            newState: 'loaded',
-          });
-
-          // Emit completion event
+          assetInfo.loadTime = duration;
+          
+          // Emit load completed event with timing data
           this.emitEvent('asset.load.completed', {
             key,
             type: assetInfo.type,
-            duration: loadTime,
-            size: undefined, // Can't determine size from string file parameter
+            duration,
+            size: this.getAssetSize(key),
           });
 
-          if (this.config.enableLogging) {
-            console.log(`[AssetService] Loaded asset: ${key} (${loadTime}ms)`);
+          resolve(this.getAssetByType(key, assetInfo.type));
+        });
+
+        // Handle load error
+        this.scene.load.once(`loaderror`, (file: any) => {
+          if (file.key === key) {
+            const error = new Error(`Failed to load asset: ${file.src}`);
+            this.emitEvent('asset.load.error', {
+              key,
+              type: assetInfo.type,
+              error,
+              attemptCount: 1,
+              willRetry: false,
+            });
+            reject(error);
           }
-
-          // Resolve with the loaded asset
-          resolve(this.getAssetByKey(key));
-        }
-      };
-
-      const fileErrorHandler = (file: Phaser.Loader.File) => {
-        if (file.key === key) {
-          // Remove from loading promises
-          this.loadingPromises.delete(key);
-
-          // Clean up loader event handlers
-          loader.off('fileprogress', fileLoadProgressHandler);
-          loader.off('filecomplete', fileCompleteHandler);
-          loader.off('fileerror', fileErrorHandler);
-
-          // Update asset state
-          this.emitEvent('asset.state.changed', {
-            key,
-            previousState: 'loading',
-            newState: 'error',
-          });
-
-          // Emit error event
-          this.emitEvent('asset.load.error', {
-            key,
-            type: assetInfo.type,
-            error:
-              file.state === Phaser.Loader.FILE_ERRORED
-                ? `Failed to load asset: ${file.src}`
-                : `Unknown error loading asset: ${key}`,
-            attemptCount: 1,
-            willRetry: false,
-          });
-
-          if (this.config.enableLogging) {
-            console.error(`[AssetService] Failed to load asset: ${key}`);
-          }
-
-          reject(new Error(`Failed to load asset: ${key}`));
-        }
-      };
-
-      // Add event handlers
-      loader.on('fileprogress', fileLoadProgressHandler);
-      loader.on('filecomplete', fileCompleteHandler);
-      loader.on('fileerror', fileErrorHandler);
-
-      // Load asset based on type
-      try {
-        switch (assetInfo.type) {
-          case AssetType.IMAGE:
-            loader.image(key, assetInfo.path);
-            break;
-
-          case AssetType.SPRITE_SHEET: {
-            // Find the asset definition to get options
-            const spriteSheetOptions = this.getAssetOptions(key);
-            if (!spriteSheetOptions?.frameConfig) {
-              reject(new Error(`Spritesheet ${key} requires frameConfig in options`));
-              return;
-            }
-            loader.spritesheet(key, assetInfo.path, spriteSheetOptions.frameConfig);
-            break;
-          }
-
-          case AssetType.ATLAS: {
-            const atlasOptions = this.getAssetOptions(key);
-            if (!atlasOptions?.atlasURL) {
-              reject(new Error(`Atlas ${key} requires atlasURL in options`));
-              return;
-            }
-            loader.atlas(key, assetInfo.path, atlasOptions.atlasURL);
-            break;
-          }
-
-          case AssetType.AUDIO:
-            loader.audio(key, assetInfo.path);
-            break;
-
-          case AssetType.JSON:
-            loader.json(key, assetInfo.path);
-            break;
-
-          case AssetType.BITMAP_FONT: {
-            const bitmapFontOptions = this.getAssetOptions(key);
-            if (!bitmapFontOptions?.dataURL) {
-              reject(new Error(`BitmapFont ${key} requires dataURL in options`));
-              return;
-            }
-            loader.bitmapFont(key, assetInfo.path, bitmapFontOptions.dataURL);
-            break;
-          }
-
-          case AssetType.VIDEO:
-            loader.video(key, assetInfo.path);
-            break;
-
-          case AssetType.TILEMAP: {
-            const tilemapOptions = this.getAssetOptions(key);
-            if (!tilemapOptions?.dataURL) {
-              reject(new Error(`Tilemap ${key} requires dataURL in options`));
-              return;
-            }
-            loader.tilemapTiledJSON(key, assetInfo.path);
-            break;
-          }
-
-          case AssetType.HTML:
-            loader.html(key, assetInfo.path);
-            break;
-
-          case AssetType.SHADER:
-            loader.glsl(key, assetInfo.path);
-            break;
-
-          default:
-            reject(new Error(`Unsupported asset type: ${assetInfo.type}`));
-            return;
-        }
-
-        // Start the loader if not already started
-        loader.start();
+        });
       } catch (error) {
-        // Clean up event handlers
-        loader.off('fileprogress', fileLoadProgressHandler);
-        loader.off('filecomplete', fileCompleteHandler);
-        loader.off('fileerror', fileErrorHandler);
-
-        // Update asset state
-        this.emitEvent('asset.state.changed', {
-          key,
-          previousState: 'loading',
-          newState: 'error',
-        });
-
-        // Emit error event
-        this.emitEvent('asset.load.error', {
-          key,
-          type: assetInfo.type,
-          error: error instanceof Error ? error : `Unknown error loading asset: ${key}`,
-          attemptCount: 1,
-          willRetry: false,
-        });
-
-        // Reject the promise
         reject(error);
       }
     });
 
-    // Store and return the loading promise
+    // Store promise
     this.loadingPromises.set(key, loadPromise);
+
+    // Clean up promise after completion or error
+    loadPromise
+      .then(() => {
+        this.loadingPromises.delete(key);
+      })
+      .catch(() => {
+        this.loadingPromises.delete(key);
+      });
+
     return loadPromise;
+  }
+
+  /**
+   * Gets the size of an asset in bytes
+   * @param key Asset key
+   * @returns Size in bytes or undefined if not available
+   * @private
+   */
+  private getAssetSize(key: string): number | undefined {
+    const assetInfo = this.assets.get(key);
+    if (!assetInfo) return undefined;
+
+    switch (assetInfo.type) {
+      case AssetType.IMAGE:
+      case AssetType.SPRITE_SHEET:
+      case AssetType.ATLAS:
+        return this.scene.textures.get(key).source[0].width * this.scene.textures.get(key).source[0].height * 4;
+      case AssetType.AUDIO:
+        return this.scene.sound.get(key).duration * 44100 * 2; // Approximate size based on duration
+      case AssetType.JSON:
+        return JSON.stringify(this.scene.cache.json.get(key)).length;
+      default:
+        return undefined;
+    }
+  }
+
+  /**
+   * Gets loading performance metrics for an asset
+   * @param key Asset key
+   * @returns Loading metrics or undefined if not available
+   */
+  getLoadingMetrics(key: string): { startTime: number; endTime?: number; duration?: number } | undefined {
+    const metrics = this.loadingMetrics.get(key);
+    if (!metrics) return undefined;
+
+    return {
+      startTime: metrics.startTime,
+      endTime: metrics.endTime,
+      duration: metrics.endTime ? metrics.endTime - metrics.startTime : undefined,
+    };
+  }
+
+  /**
+   * Gets loading performance metrics for all assets
+   * @returns Array of loading metrics for all assets
+   */
+  getAllLoadingMetrics(): Array<{ key: string; metrics: { startTime: number; endTime?: number; duration?: number } }> {
+    return Array.from(this.loadingMetrics.entries()).map(([key, metrics]) => ({
+      key,
+      metrics: {
+        startTime: metrics.startTime,
+        endTime: metrics.endTime,
+        duration: metrics.endTime ? metrics.endTime - metrics.startTime : undefined,
+      },
+    }));
   }
 
   /**

@@ -27,6 +27,21 @@ describe('AssetService Cache Policy Enforcement', () => {
           }
           eventHandlers.get(event)?.push(callback);
         }),
+        once: jest.fn().mockImplementation(function(this: any, ...args: any[]) {
+          const [event, callback] = args;
+          if (!eventHandlers.has(event)) {
+            eventHandlers.set(event, []);
+          }
+          // For once, we'll call the callback immediately and remove it
+          callback();
+          const handlers = eventHandlers.get(event);
+          if (handlers) {
+            const index = handlers.indexOf(callback);
+            if (index !== -1) {
+              handlers.splice(index, 1);
+            }
+          }
+        }),
         off: jest.fn().mockImplementation(function(this: any, ...args: any[]) {
           const [event, callback] = args;
           const handlers = eventHandlers.get(event);
@@ -58,7 +73,12 @@ describe('AssetService Cache Policy Enforcement', () => {
         }),
       },
       textures: {
-        get: jest.fn().mockReturnValue({}),
+        get: jest.fn().mockReturnValue({
+          source: [{
+            width: 32,
+            height: 32
+          }]
+        }),
         exists: jest.fn().mockReturnValue(true),
       },
     };
