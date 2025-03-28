@@ -1,57 +1,122 @@
-## AssetService Implementation Plan
+## Phaser Lifecycle Integration Implementation Plan
 
-The AssetService is a core component of our game engine's asset management system. It provides centralized control over asset loading, caching, and memory management to ensure optimal game performance and resource utilization.
-This service is responsible for handling all game assets including textures, audio, models, and other game resources.
-See design doc: /docs/asset-service-design.md
+This document tracks the implementation progress of our Phaser lifecycle integration.
+See design docs: 
+- /docs/design/ServiceLayer-PhaserLifecycle.md
+- /docs/design/ServiceLayer-Overview.md
 
-**Related Documents**
+### Phase 1: Core Lifecycle System (1 week)
+1. **Lifecycle Manager Implementation** ✅
+   - Create LifecycleManager service ✅
+   - Implement scene lifecycle hooks ✅
+   - Add service registration system ✅
+   - Build status tracking ✅
+   - Add dependency resolution system ✅
+   - Implement service priority handling ✅
 
-- @ServiceLayer-AssetService.md - Complete implementation details
-- @ServiceLayer-Overview.md - Architecture context
-- @EventBusService.ts - Event system integration 
+2. **Registry Service Updates** ✅
+   - Add lifecycle-aware service registration ✅
+   - Implement scene-specific service tracking ✅
+   - Add service dependency management ✅
+   - Create service state transitions ✅
+   - Update service cleanup handling ✅
 
-### Phase 1: Core Framework - Asset Registry ✅
-### Phase 2: Basic Loading System ✅
-### Phase 3: Asset Retrieval System ✅
-### Phase 4: Memory Management ✅
+3. **AssetService Refactoring** ✅
+   - Update scene reference management ✅
+   - Implement scene-aware loading system ✅
+   - Add scene-specific memory management ✅
+   - Update resource cleanup ✅
+   - Add loading state transitions ✅
+   - Implement scene-specific metrics ✅
 
-### Phase 5: Performance Optimization
-1. **Cache Policy Implementation** ✅
-2. **Cache Pruning System** ✅
+### Phase 2: Service Integration & Resource Management (1 week)
+1. **GameScene Updates**
+   - [ ] Implement lifecycle-aware initialization
+   - [ ] Add resource cleanup system
+   - [ ] Update service integration
+   - [ ] Add transition handling
+   - [ ] Implement scene state management
+   - [ ] Add resource tracking
 
-3. **Performance Metrics**
-   - Implement loading time tracking
-   - Add memory efficiency metrics
-   - Create usage pattern analysis
-   - Implement performance event emissions
-   - Write tests for performance metrics
+2. **ObjectPoolService Updates**
+   - [ ] Make pools scene-aware
+   - [ ] Implement pool lifecycle management
+   - [ ] Add scene-specific cleanup
+   - [ ] Update resource sharing
+   - [ ] Add performance monitoring
+   - [ ] Implement dynamic pool sizing
 
-4. **Optimization Strategies**
-   - Implement texture atlas prioritization
-   - Add automatic texture compression
-   - Create dynamic quality adjustment
-   - Implement background loading optimization
-   - Write tests for optimization strategies
+3. **Resource Management System**
+   - [ ] Implement resource tracking
+   - [ ] Add cleanup triggers
+   - [ ] Create memory limits
+   - [ ] Build resource sharing system
+   - [ ] Add transition validation
+   - [ ] Create monitoring tools
 
-### Phase 6: Extension and Integration
-1. **Plugin System**
-   - Create AssetService plugin architecture
-   - Implement custom loader support
-   - Add format conversion plugins
-   - Create compression plugins
-   - Write tests for plugin system
+### Phase 3: Integration & Testing (1 week)
+1. **Service Integration**
+   - [ ] Update all existing services to implement ILifecycleAware
+   - [ ] Add lifecycle hooks to all services
+   - [ ] Implement dependency management
+   - [ ] Create integration tests
+   - [ ] Add service state validation
+   - [ ] Implement error recovery
 
-2. **Advanced Features**
-   - Implement asset streaming for large assets
-   - Add progressive loading for textures
-   - Create procedural asset generation
-   - Implement asset dependency resolution
-   - Write tests for advanced features
+2. **Performance Optimization**
+   - [ ] Add performance monitoring
+   - [ ] Implement optimization strategies
+   - [ ] Create performance tests
+   - [ ] Build optimization tools
+   - [ ] Add memory profiling
+   - [ ] Implement resource optimization
+
+3. **Testing & Validation**
+   - [ ] Create comprehensive test suite
+   - [ ] Add scene transition tests
+   - [ ] Implement memory leak detection
+   - [ ] Add performance benchmarks
+   - [ ] Create integration test scenarios
+   - [ ] Add error recovery tests
+
+### Phase 4: Cleanup & Documentation (1 week)
+1. **Code Cleanup**
+   - [ ] Remove deprecated code
+   - [ ] Update service interfaces
+   - [ ] Clean up unused resources
+   - [ ] Optimize imports
+   - [ ] Update type definitions
+   - [ ] Fix any linting issues
+
+2. **Documentation**
+   - [ ] Update service documentation
+   - [ ] Add lifecycle diagrams
+   - [ ] Create migration guides
+   - [ ] Document best practices
+   - [ ] Add code examples
+   - [ ] Update API documentation
+
+3. **Final Testing**
+   - [ ] Run full test suite
+   - [ ] Perform memory profiling
+   - [ ] Test scene transitions
+   - [ ] Validate error handling
+   - [ ] Check performance metrics
+   - [ ] Verify cleanup processes
 
 ### Next Steps
-- Complete Phase 5: Performance Optimization
-  - Focus on Cache Policy Implementation
-  - Implement Performance Metrics system
-  - Build Optimization Strategies
-- Begin Phase 6 once Phase 5 is complete 
+1. Begin Phase 1 implementation:
+   - Create LifecycleManager service
+   - Implement core lifecycle hooks
+   - Add service registration system
+
+2. Prepare for Phase 2:
+   - Design resource management system
+   - Plan scene transition handling
+   - Create monitoring tools
+
+3. Start service integration:
+   - Update existing services
+   - Add lifecycle hooks
+   - Implement dependency management
 

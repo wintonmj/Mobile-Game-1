@@ -25,15 +25,15 @@ We will implement a comprehensive service layer following these design principle
 
 Our service layer will include 10 core services:
 1. **Asset Service** ✓ - Centralized asset preloading, access, memory management, and optimization
-10. **Configuration Service** ✓ - External configuration for game balancing
-8. **Event Bus Service** ✓ - Decoupled component communication
-9. **Object Pool Service** - Memory optimization through object reuse
-2. **Animation Service** - Animation creation and management
-4. **Physics Service** - Collision detection and movement with physics
-5. **Game State Service** - Game state management and persistence
-3. **Input Service** - Unified input handling across different devices
-6. **Audio Service** - Sound and music playback
-7. **Logger Service** - Logging and performance monitoring
+2. **Configuration Service** ✓ - External configuration for game balancing
+3. **Event Bus Service** ✓ - Decoupled component communication
+4. **Object Pool Service** - Memory optimization through object reuse
+5. **Animation Service** - Animation creation and management
+6. **Physics Service** - Collision detection and movement with physics
+7. **Game State Service** - Game state management and persistence
+8. **Input Service** - Unified input handling across different devices
+9. **Audio Service** - Sound and music playback
+10. **Logger Service** - Logging and performance monitoring
 
 ### Unified Registry
 
@@ -49,14 +49,14 @@ A central registry will manage:
 - Implement Registry system ✓
 - Create EventBusService ✓
 - Build minimal configuration service ✓
-- Establish Phaser lifecycle integration ✓
+- Establish Phaser lifecycle integration (In Progress)
 - Set up testing infrastructure ✓
 
 ### Phase 2: Core Services (3 weeks) - In Progress
 - Implement AssetService ✓ (Complete with memory management and optimization features)
-- Create AnimationService
-- Build ObjectPoolService
-- Develop GameStateService basics
+- Create AnimationService (In Progress)
+- Build ObjectPoolService (Not Started)
+- Develop GameStateService basics (Not Started)
 
 ### Phase 3: Performance & Integration (2 weeks)
 - Add performance metrics to services

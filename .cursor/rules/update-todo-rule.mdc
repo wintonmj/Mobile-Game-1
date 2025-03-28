@@ -49,19 +49,20 @@ Tasks:
 Progress Tracking Rules:
 1. Task Completion:
    - Add ✅ to completed tasks
-   - Example: "- Implement cache system ✅"
+   - Example: "- ✅ Implement cache system "
+   - add references to all relevant files to this step created upon completion
 
 2. Step Completion:
    - When all tasks under a step are complete:
      * Add ✅ to the step
      * Remove all task items under that step
-   - Example: "1. **Cache Implementation** ✅"
+   - Example: "✅ 1. **Cache Implementation** "
 
 3. Phase Completion:
    - When all steps under a phase are complete:
      * Add ✅ to the phase
      * Remove all step items under that phase
-   - Example: "### Phase 1: Core Framework ✅"
+   - Example: "### ✅ Phase 1: Core Framework"
 
 Update Process:
 1. Update TODO file with progress markers

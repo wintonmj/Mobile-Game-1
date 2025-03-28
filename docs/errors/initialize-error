@@ -1,0 +1,231 @@
+src/__tests__/views/GameScene.test.ts
+
+1. High Priority (Critical Path)
+   a. Initialization Test Failure: ✓ FIXED
+      ```typescript
+      expect(gameScene.controller).toBeNull();
+      ```
+      Bug: Controller is not null after init() when it should be
+      Root Cause: Two issues identified:
+      1. Game registry was not properly set up in the test environment
+      2. Controller setup was happening too early in the test lifecycle
+
+      Initial Test Status: ❌ FAILING
+      Error: Game registry not found
+
+      Solution: 
+      1. Set up game registry in beforeEach:
+      ```typescript
+      beforeEach(() => {
+        // Create mock registry with required methods
+        mockRegistry = {
+          getService: jest.fn(),
+          registerService: jest.fn(),
+          getServiceStatus: jest.fn().mockReturnValue(ServiceStatus.READY),
+        } as IRegistry;
+
+        // Set up the game registry in the window object
+        mockWindow.gameRegistry = mockRegistry;
+
+        // Create a new instance of GameScene
+        gameScene = new GameScene();
+      });
+      ```
+
+      2. Create dedicated initialization test:
+      ```typescript
+      describe('Initialization', () => {
+        it('should have null controller after init()', async () => {
+          await gameScene.init();
+          expect(gameScene.controller).toBeNull();
+        });
+      });
+      ```
+
+      Implementation Status: ✓ IMPLEMENTED
+      Test Status: ✓ PASSING
+      Verification:
+      ```
+      GameScene
+        Initialization
+          ✓ should have null controller after init() (3 ms)
+      ```
+
+      Implementation Results:
+      - Test now passes, confirming proper initialization sequence
+      - Controller remains null after init() as expected
+      - Game registry is properly available during initialization
+      - Follows arrange-act-assert pattern for test clarity
+
+      Related Tests Added:
+      ```typescript
+      describe('GameScene initialization', () => {
+        it('should properly initialize the scene with required dependencies', async () => {
+          await gameScene.init();
+          expect(mockLifecycleManager.initialize).toHaveBeenCalledWith(gameScene);
+          expect(gameScene.lifecycleManager).toBeDefined();
+          expect(gameScene.playerView).toBeDefined();
+          expect(gameScene.controller).toBeNull(); // controller is initialized in create()
+        });
+
+        it('should throw error if registry is not found', async () => {
+          mockWindow.gameRegistry = null;
+          await expect(gameScene.init()).rejects.toThrow('Game registry not found');
+        });
+      });
+      ```
+
+      Testing Guidelines Applied:
+      1. Clear test descriptions
+      2. Proper async/await handling
+      3. Explicit error case testing
+      4. Isolation of test concerns
+      5. Proper mock setup and teardown
+
+      Next Steps:
+      - Fix remaining failing tests that depend on proper initialization
+      - Update related test documentation
+      - Consider adding more edge cases to the initialization test suite
+
+   b. Create Test Failure (Lifecycle Manager):
+      ```typescript
+      throw new Error('Lifecycle manager not initialized');
+      ```
+      Bug: Tests are failing because they try to call create() without first setting up the lifecycle manager
+      Root Cause: The lifecycle manager is initialized in init() but not properly maintained in the test setup. Some tests are trying to call create() without ensuring the lifecycle manager exists.
+      Solution: Explicitly set gameScene.lifecycleManager = mockLifecycleManager before calling create() in each test.
+      Implementation:
+      ```typescript
+      it('should create the game world with proper setup', async () => {
+        await gameScene.init();
+        gameScene.lifecycleManager = mockLifecycleManager; // Add this line
+        await gameScene.create();
+        // ... rest of test
+      });
+      ```
+
+2. Medium Priority (Core Functionality)
+   a. World Creation Test Failures:
+      ```typescript
+      expect(mockGameController.init).toHaveBeenCalled();
+      expect(gameScene.dungeonTiles.length).toBe(expectedTiles);
+      ```
+      Bug: Two issues:
+      1. Controller's init() is never called
+      2. Tile count calculation is incorrect (1024 vs expected 976.5625)
+      Root Cause: 
+      1. Controller initialization is missing in the test setup
+      2. Tile calculation doesn't account for floating-point division
+      Solution: 
+      1. Add proper controller initialization before create()
+      2. Use Math.floor() to handle the tile count calculation correctly
+      Implementation:
+      ```typescript
+      it('should create dungeon tiles with correct properties', async () => {
+        await gameScene.init();
+        gameScene.lifecycleManager = mockLifecycleManager;
+        gameScene.controller = mockGameController;
+        await gameScene.create();
+
+        const dungeonSize = mockGameController.dungeon.getSize();
+        const tileSize = mockGameController.dungeon.tileSize;
+        const expectedTiles = Math.floor(dungeonSize.width / tileSize) * Math.floor(dungeonSize.height / tileSize);
+        
+        expect(gameScene.dungeonTiles.length).toBe(expectedTiles);
+      });
+      ```
+
+   b. Player Position Test Failure:
+      ```typescript
+      expect(mockPlayerView.create).toHaveBeenCalledWith(expectedPosition.x, expectedPosition.y);
+      ```
+      Bug: Player is being created at position (100,100) instead of expected (400,300)
+      Root Cause: The mock controller's getPosition() is returning a default position that doesn't match the test's expectations
+      Solution: Explicitly mock the controller's getPosition() to return the expected position before calling create()
+      Implementation:
+      ```typescript
+      it('should create player at correct position', async () => {
+        await gameScene.init();
+        gameScene.lifecycleManager = mockLifecycleManager;
+        gameScene.controller = mockGameController;
+        
+        const expectedPosition = { x: 400, y: 300 };
+        mockGameController.player.getPosition.mockReturnValue(expectedPosition);
+        
+        await gameScene.create();
+        expect(mockPlayerView.create).toHaveBeenCalledWith(expectedPosition.x, expectedPosition.y);
+      });
+      ```
+
+   c. Missing Controller Test Failure:
+      ```typescript
+      expect(gameScene.dungeonTiles.length).toBe(0);
+      ```
+      Bug: Tiles are being created even when controller is null
+      Root Cause: The create() method isn't checking for null controller before attempting to create tiles
+      Solution: Add a null check at the start of the tile creation code to prevent tile creation when controller is null
+      Implementation:
+      ```typescript
+      // In GameScene.ts
+      if (!this.controller) {
+        return; // Don't create tiles if no controller
+      }
+      // ... rest of create method
+      ```
+
+3. Lower Priority (Edge Cases)
+   a. Camera Setup Test Failure:
+      ```typescript
+      expect(gameScene.cameras.main.startFollow).not.toHaveBeenCalled();
+      ```
+      Bug: Camera is trying to follow a null player sprite
+      Root Cause: The camera setup code isn't checking if the player sprite exists before trying to follow it
+      Solution: Add a null check before attempting to set up camera following
+      Implementation:
+      ```typescript
+      // In GameScene.ts
+      if (this.playerSprite) {
+        this.cameras.main.startFollow(this.playerSprite);
+      }
+      ```
+
+   b. Preload Error Test Failure:
+      ```typescript
+      expect(console.error).toHaveBeenCalledWith('Load error:', mockError);
+      ```
+      Bug: Console.error isn't being called as expected
+      Root Cause: The console.error mock isn't properly set up before the test runs
+      Solution: Add proper console.error mocking in the test setup
+      Implementation:
+      ```typescript
+      beforeEach(() => {
+        jest.spyOn(console, 'error').mockImplementation();
+      });
+      ```
+
+Implementation Plan:
+1. Fix High Priority Issues:
+   - Remove controller setup from beforeEach
+   - Add lifecycle manager initialization to all create() tests
+   - Update test setup to follow proper initialization sequence
+
+2. Fix Medium Priority Issues:
+   - Update tile count calculations
+   - Fix player position handling
+   - Add null checks for controller-dependent operations
+
+3. Fix Lower Priority Issues:
+   - Add null checks for camera setup
+   - Add proper console.error mocking
+   - Update error handling tests
+
+Testing Guidelines:
+1. Always follow proper initialization sequence
+2. Verify all method parameters
+3. Check dependency setup
+4. Maintain test isolation
+5. Use clear assertions
+6. Add proper null checks
+7. Mock external dependencies correctly
+8. Handle edge cases explicitly
+

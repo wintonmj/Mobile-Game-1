@@ -21,4 +21,4 @@ You as 'the agent'
     4.2 git commit -m "<message from above following the example format>"
 
 5. Return a runnable response that allows me to 'git push'
-6. update [TODO](mdc:TODO) according to its guiding design document and what we have updated
+6. After the push has completed successfully I want you to update [TODO](mdc:TODO) according to its guiding design document and what we have updated

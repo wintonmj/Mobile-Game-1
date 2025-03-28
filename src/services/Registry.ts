@@ -1,3 +1,6 @@
+import { IService } from './interfaces/IService';
+import { ServiceStatus } from './interfaces/ServiceStatus';
+
 // Define Service interface locally to avoid import issues
 export interface Service {
   initialize?: () => Promise<void>;
@@ -18,6 +21,10 @@ export interface IRegistry {
   initialize(): Promise<void>;
   shutdown(): Promise<void>;
   initializeBasicServices(): void;
+  registerLifecycleService(serviceId: string, service: IService): void;
+  getServiceStatus(serviceId: string): ServiceStatus;
+  getServicesForScene(scene: Phaser.Scene): IService[];
+  updateServiceScene(serviceId: string, scene: Phaser.Scene | null): void;
 }
 
 export interface IRegistryService extends Service {
@@ -35,6 +42,8 @@ export interface IRegistryService extends Service {
 
 export class Registry implements IRegistry {
   private services: Map<string, Service> = new Map();
+  private lifecycleServices: Map<string, IService> = new Map();
+  private sceneServices: Map<Phaser.Scene, Set<string>> = new Map();
   private dependencies: Map<string, Set<string>> = new Map();
   private initialized: boolean = false;
 
@@ -44,6 +53,14 @@ export class Registry implements IRegistry {
       this.dependencies.set(serviceId, new Set());
     }
     serviceInstance.onRegister?.();
+  }
+
+  registerLifecycleService(serviceId: string, service: IService): void {
+    if (this.lifecycleServices.has(serviceId)) {
+      throw new Error(`Lifecycle service ${serviceId} is already registered`);
+    }
+    this.lifecycleServices.set(serviceId, service);
+    this.registerService(serviceId, service);
   }
 
   getService<T>(serviceId: string): T {
@@ -58,11 +75,74 @@ export class Registry implements IRegistry {
     return this.services.has(serviceId);
   }
 
+  getServiceStatus(serviceId: string): ServiceStatus {
+    const service = this.lifecycleServices.get(serviceId);
+    if (!service) {
+      throw new Error(`Lifecycle service not found: ${serviceId}`);
+    }
+    return service.getStatus();
+  }
+
+  getServicesForScene(scene: Phaser.Scene): IService[] {
+    const serviceIds = this.sceneServices.get(scene);
+    if (!serviceIds) {
+      return [];
+    }
+    return Array.from(serviceIds)
+      .map(id => this.lifecycleServices.get(id))
+      .filter((service): service is IService => service !== undefined);
+  }
+
+  updateServiceScene(serviceId: string, scene: Phaser.Scene | null): void {
+    const service = this.lifecycleServices.get(serviceId);
+    if (!service) {
+      throw new Error(`Lifecycle service not found: ${serviceId}`);
+    }
+
+    // Remove from old scene
+    const oldScene = service.getScene();
+    if (oldScene) {
+      const oldSceneServices = this.sceneServices.get(oldScene);
+      if (oldSceneServices) {
+        oldSceneServices.delete(serviceId);
+        if (oldSceneServices.size === 0) {
+          this.sceneServices.delete(oldScene);
+        }
+      }
+    }
+
+    // Add to new scene
+    if (scene) {
+      if (!this.sceneServices.has(scene)) {
+        this.sceneServices.set(scene, new Set());
+      }
+      this.sceneServices.get(scene)?.add(serviceId);
+    }
+
+    service.setScene(scene);
+  }
+
   unregisterService(serviceId: string): void {
     const service = this.services.get(serviceId);
     if (service) {
       service.onUnregister?.();
     }
+
+    const lifecycleService = this.lifecycleServices.get(serviceId);
+    if (lifecycleService) {
+      const scene = lifecycleService.getScene();
+      if (scene) {
+        const sceneServices = this.sceneServices.get(scene);
+        if (sceneServices) {
+          sceneServices.delete(serviceId);
+          if (sceneServices.size === 0) {
+            this.sceneServices.delete(scene);
+          }
+        }
+      }
+      this.lifecycleServices.delete(serviceId);
+    }
+
     this.services.delete(serviceId);
     this.dependencies.delete(serviceId);
   }
@@ -72,6 +152,8 @@ export class Registry implements IRegistry {
       service.onUnregister?.();
     }
     this.services.clear();
+    this.lifecycleServices.clear();
+    this.sceneServices.clear();
     this.dependencies.clear();
     this.initialized = false;
   }

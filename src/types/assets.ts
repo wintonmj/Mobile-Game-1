@@ -81,6 +81,7 @@ export interface AssetInfo {
   size?: number;
   lastUsed?: number;
   cachePolicy: CachePolicy;
+  scene?: Phaser.Scene | null; // The scene this asset belongs to
 }
 
 /**
