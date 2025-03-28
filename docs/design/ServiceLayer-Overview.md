@@ -25,22 +25,22 @@ We will implement a comprehensive service layer following these design principle
 
 Our service layer will include 10 core services:
 1. **Asset Service** ✓ - Centralized asset preloading, access, memory management, and optimization
-2. **Animation Service** - Animation creation and management
-3. **Input Service** - Unified input handling across different devices
-4. **Physics Service** - Collision detection and movement with physics
-5. **Game State Service** - Game state management and persistence
-6. **Audio Service** - Sound and music playback
-7. **Logger Service** - Logging and performance monitoring
+10. **Configuration Service** ✓ - External configuration for game balancing
 8. **Event Bus Service** ✓ - Decoupled component communication
 9. **Object Pool Service** - Memory optimization through object reuse
-10. **Configuration Service** ✓ - External configuration for game balancing
+2. **Animation Service** - Animation creation and management
+4. **Physics Service** - Collision detection and movement with physics
+5. **Game State Service** - Game state management and persistence
+3. **Input Service** - Unified input handling across different devices
+6. **Audio Service** - Sound and music playback
+7. **Logger Service** - Logging and performance monitoring
 
 ### Unified Registry
 
 A central registry will manage:
 - Service instantiation and retrieval ✓
-- Component factory registration
 - Dependency resolution ✓
+- Component factory registration
 - Lifecycle management
 
 ## Implementation Plan

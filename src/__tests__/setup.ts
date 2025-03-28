@@ -1,5 +1,6 @@
 // This file is run before each test and configures the test environment
 import { jest } from '@jest/globals';
+import { setupFakeTimers, restoreRealTimers } from './helpers/timerTestUtils';
 
 // Import our model-context-protocol helpers
 import { ModelContextTest } from './helpers/modelContextTest';
@@ -60,6 +61,12 @@ jest.mock('phaser', () => ({
 // Configure global Jest behavior
 beforeEach(() => {
   jest.clearAllMocks();
+  
+  // Set up fake timers with modern timers
+  jest.useFakeTimers({
+    doNotFake: ['nextTick', 'setImmediate'],
+    legacyFakeTimers: false
+  });
 
   // Initialize model-context-protocol for browser error tracking
   ModelContextTest.init();
@@ -69,8 +76,20 @@ beforeEach(() => {
 afterEach(() => {
   // Clean up model-context-protocol
   ModelContextTest.cleanup();
+  
+  // Restore file system mock
   fsMock.restore();
+  
+  // Clear all timers and restore real timers
+  jest.clearAllTimers();
+  jest.useRealTimers();
+  
+  // Clear any remaining promises
+  jest.clearAllMocks();
 });
+
+// Configure Jest timeout for all tests
+jest.setTimeout(10000);
 
 // Disable console errors during tests to keep output clean
 // Uncomment if test output becomes too noisy

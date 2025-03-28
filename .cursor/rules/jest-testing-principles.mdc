@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # Jest Testing Principles
 
 ## Mock Implementation Patterns

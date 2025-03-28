@@ -41,15 +41,32 @@ export interface AssetDefinition {
  */
 export interface AssetOptions {
   // Common options
-  crossOrigin?: string;
-  xhrSettings?: Phaser.Types.Loader.XHRSettingsObject;
-
+  priority?: number;         // Loading priority (higher = loaded sooner)
+  retryCount?: number;       // Number of load retries on failure
+  cachePolicy?: CachePolicy; // How this asset should be cached
+  
   // Type-specific options
+  // For SPRITE_SHEET
   frameConfig?: Phaser.Types.Loader.FileTypes.ImageFrameConfig;
+  frameWidth?: number;
+  frameHeight?: number;
+  frameMax?: number;
+  frameStart?: number;
+  
+  // For ATLAS
   atlasURL?: string;
-  atlasXhrSettings?: Phaser.Types.Loader.XHRSettingsObject;
+  atlasFormat?: string;
+  
+  // For AUDIO
+  audioRate?: number;
+  loop?: boolean;
+  
+  // For TILEMAP
+  tilemapDataURL?: string;
+  tilemapFormat?: string;
+
+  // For BITMAP_FONT
   dataURL?: string;
-  dataXhrSettings?: Phaser.Types.Loader.XHRSettingsObject;
 }
 
 /**

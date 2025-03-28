@@ -66,6 +66,28 @@ For a detailed description of project goals and roadmap, see [GOALS.md](GOALS.md
 - `./run.sh watch` - Watch for changes and run checks
 - `./run.sh run` - Run both game server and MCP server
 
+### Running Specific Tests
+
+To run a specific test or set of tests, use the following syntax:
+
+```bash
+# Run a specific test
+npm test -- path/to/test/file.test.ts --testNamePattern="test name"
+
+# Run tests with increased timeout
+npm test -- path/to/test/file.test.ts --testNamePattern="test name" --testTimeout=15000
+
+# Run tests matching a pattern
+npm test -- path/to/test/file.test.ts --testNamePattern="pattern"
+```
+
+For example, to run a specific test in the AssetService:
+```bash
+npm test -- src/__tests__/services/AssetService.test.ts --testNamePattern="should keep persistent assets in cache"
+```
+
+Note: The `--` after `npm test` is required to pass arguments to Jest.
+
 ## Controls
 
 - WASD / Arrow Keys: Movement

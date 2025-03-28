@@ -1,80 +1,111 @@
 ---
 description: 
-globs: 
-alwaysApply: true
+globs: *.ts
+alwaysApply: false
 ---
-File Structure and Organization
-Follow MVC (Model-View-Controller) architecture
-Group related functionality into appropriate directories (models, views, controllers, utils, services)
-Keep files focused on a single responsibility
-Maximum file length: 300 lines (refactor if longer)
-Organize code within files: imports first, followed by interfaces/types, then classes/functions
-Type Definitions
-Always define explicit types, avoid 'any' type
-Use TypeScript interfaces for complex object shapes
-Define type aliases for function signatures and union types
-Use generic types when appropriate
-Export types that are used across multiple files
-Use type narrowing with type guards when necessary
-Naming Conventions
-Use PascalCase for classes, interfaces, types, and enums
-Example: PlayerView, InputController, Direction
-Use camelCase for variables, functions, methods, and properties
-Example: getPosition(), isWalking, toggleCarrying()
-Use UPPER_SNAKE_CASE for constants
-Prefix interfaces with 'I' if they are for implementation inheritance
-Use descriptive, meaningful names that convey purpose
-Classes and Objects
-Use access modifiers for all class members (public, private, protected)
-Initialize class properties either in declaration or constructor
-Prefer readonly for properties that won't change after initialization
-Use getters/setters for properties that need controlled access
-Document complex class behavior with JSDoc comments
-Functions and Methods
-Specify return types for all functions and methods
-Use void type for functions that don't return a value
-Use arrow functions for anonymous functions and callbacks
-Keep functions small and focused on a single task
-Prefer named parameters for complex function signatures
-Code Formatting
-Use 2 spaces for indentation
-Use single quotes for strings
-Always end statements with semicolons
-Maximum line length: 100 characters
-Use trailing commas in multi-line object and array literals
-Place opening braces on the same line as their statement
-Add a space before the opening parenthesis in control statements (if, while, etc.)
-No space between function name and parentheses for function calls
-Imports and Exports
-Group imports by source: built-in/external libraries first, then project imports
-Sort imports alphabetically within each group
-Use named exports rather than default exports for consistency
-Use explicit import statements rather than wildcard imports
-Error Handling
-Use explicit null/undefined checking
-Implement proper error handling with try/catch blocks where appropriate
-Use non-null assertion operator (!) only when you're certain a value isn't null/undefined
-Prefer optional chaining (?.) and nullish coalescing (??) for handling potential null/undefined values
-Interfaces and Types
-Prefer interfaces for object shapes that will be implemented or extended
-Use type aliases for unions, intersections, and simple object types
-Export interfaces and types that are shared between files
-Keep interface definitions focused and cohesive
-Comments and Documentation
-Use JSDoc comments for public APIs and complex functions
-Keep comments focused on why, not what (code should be self-documenting)
-Update comments when code changes
-Document complex algorithms and business logic
-Avoid commented-out code
-Performance and Best Practices
-Avoid excessive type casting
-Use async/await for asynchronous operations instead of raw promises
-Minimize use of any type and type assertions
-Use proper TypeScript utility types (Partial, Readonly, Record, etc.)
-Avoid deeply nested code structures
-Testing
-Write tests for all public APIs
-Use descriptive test names that indicate what is being tested
-Structure tests with arrange-act-assert pattern
-Mock dependencies appropriately for unit tests
-This style guide reflects the patterns observed in the existing codebase and promotes consistency, readability, and maintainability for TypeScript files.
+# TypeScript Code Style Guide
+
+## 1. Type Definitions (Highest Priority)
+- Always define explicit types, avoid 'any' type
+- Use TypeScript interfaces for complex object shapes
+- Define type aliases for function signatures and union types
+- Use generic types when appropriate
+- Export types that are used across multiple files
+- Use type narrowing with type guards when necessary
+
+## 2. Error Handling (High Priority)
+- Use explicit null/undefined checking
+- Implement proper error handling with try/catch blocks
+- Use non-null assertion operator (!) only when certain
+- Prefer optional chaining (?.) and nullish coalescing (??)
+
+## 3. Performance and Best Practices (High Priority)
+- Avoid excessive type casting
+- Use async/await for asynchronous operations
+- Minimize use of 'any' type and type assertions
+- Use proper TypeScript utility types:
+  - `Partial<T>`
+  - `Readonly<T>`
+  - `Record<K,T>`
+- Avoid deeply nested code structures
+
+## 4. Testing (High Priority)
+- Write tests for all public APIs
+- Use descriptive test names
+- Structure tests with arrange-act-assert pattern
+- Mock dependencies appropriately for unit tests
+
+## 5. Naming Conventions (High Priority)
+- Classes, Interfaces, Types, and Enums: `PascalCase`
+  - Example: `PlayerView`, `InputController`, `Direction`
+- Variables, Functions, Methods, and Properties: `camelCase`
+  - Example: `getPosition()`, `isWalking`, `toggleCarrying()`
+- Constants: `UPPER_SNAKE_CASE`
+- Prefix interfaces with 'I' if for implementation inheritance
+- Use descriptive, meaningful names that convey purpose
+
+## 6. Architecture & File Organization (High Priority)
+- Follow MVC (Model-View-Controller) architecture
+- Group related functionality into appropriate directories:
+  - `models/` - Data models and business logic
+  - `views/` - UI components and presentation
+  - `controllers/` - Application flow control
+  - `utils/` - Helper functions and utilities
+  - `services/` - External service integrations
+- Keep files focused on a single responsibility
+- Maximum file length: 300 lines (refactor if longer)
+- Organize code within files:
+  1. Imports
+  2. Interfaces/Types
+  3. Classes/Functions
+
+## 7. Classes and Objects (Medium Priority)
+- Use access modifiers for all class members:
+  - `public` - Accessible from anywhere
+  - `private` - Only accessible within the class
+  - `protected` - Accessible within the class and subclasses
+- Initialize class properties either in declaration or constructor
+- Use `readonly` for properties that won't change after initialization
+- Use getters/setters for properties that need controlled access
+- Document complex class behavior with JSDoc comments
+
+## 8. Functions and Methods (Medium Priority)
+- Specify return types for all functions and methods
+- Use `void` type for functions that don't return a value
+- Use arrow functions for anonymous functions and callbacks
+- Keep functions small and focused on a single task
+- Prefer named parameters for complex function signatures
+
+## 9. Code Formatting (Medium Priority)
+- Use 2 spaces for indentation
+- Use single quotes for strings
+- Always end statements with semicolons
+- Maximum line length: 100 characters
+- Use trailing commas in multi-line object and array literals
+- Place opening braces on the same line as their statement
+- Add a space before the opening parenthesis in control statements
+- No space between function name and parentheses for function calls
+
+## 10. Interfaces and Types (Medium Priority)
+- Prefer interfaces for object shapes that will be implemented/extended
+- Use type aliases for unions, intersections, and simple object types
+- Export interfaces and types that are shared between files
+- Keep interface definitions focused and cohesive
+
+## 11. Comments and Documentation (Medium Priority)
+- Use JSDoc comments for public APIs and complex functions
+- Keep comments focused on why, not what
+- Update comments when code changes
+- Document complex algorithms and business logic
+- Avoid commented-out code
+
+## 12. Imports and Exports (Low Priority)
+- Group imports by source:
+  1. Built-in/external libraries
+  2. Project imports
+- Sort imports alphabetically within each group
+- Use named exports rather than default exports
+- Use explicit import statements rather than wildcard imports
+
+---
+*Note: This style guide promotes consistency, readability, and maintainability for TypeScript files. Priorities are marked as High, Medium, or Low based on their impact on code quality and maintainability.*

@@ -3,6 +3,15 @@ import { PlayerAnimationLoader } from '../../views/PlayerAnimationLoader';
 import { Actions, ActionAnimations } from '../../models/Actions';
 import type Phaser from 'phaser';
 import { ModelContextTest } from '../helpers/modelContextTest';
+import {
+  advanceTimersAndRunMicrotasks,
+  runAllTimersAndMicrotasks,
+  waitForCondition,
+  withFakeTimers,
+  waitForTime,
+  setupFakeTimers,
+  restoreRealTimers
+} from '../helpers/timerTestUtils';
 
 describe('PlayerAnimationLoader', () => {
   // Create a properly typed mock Phaser scene
@@ -26,6 +35,11 @@ describe('PlayerAnimationLoader', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     animationLoader = new PlayerAnimationLoader(mockScene as any);
+    setupFakeTimers({ timeoutMs: 10000 });
+  });
+
+  afterEach(() => {
+    restoreRealTimers();
   });
 
   it(
@@ -134,14 +148,34 @@ describe('PlayerAnimationLoader', () => {
     'should create walk animations for all directions',
     ModelContextTest.createTest(async () => {
       // Setup all required mocks
-      (mockScene.textures.exists as jest.Mock).mockReturnValue(true);
-      (mockScene.anims.generateFrameNumbers as jest.Mock).mockReturnValue([0, 1, 2, 3]);
+      const mockScene = {
+        load: {
+          spritesheet: jest.fn(),
+          once: jest.fn((event: string, callback: Function) => {
+            if (event === 'complete') {
+              callback();
+            }
+          })
+        },
+        textures: {
+          exists: jest.fn().mockReturnValue(true)
+        },
+        anims: {
+          create: jest.fn(),
+          generateFrameNumbers: jest.fn().mockReturnValue([0, 1, 2, 3])
+        }
+      };
 
-      // Wait for rendering to complete
-      await ModelContextTest.waitForRender();
+      // Create the loader
+      const loader = new PlayerAnimationLoader(mockScene as any);
 
-      // Call the createAnimations method
-      animationLoader.createAnimations();
+      // Preload animations
+      loader.preloadAnimations();
+      await runAllTimersAndMicrotasks({ timeoutMs: 10000 });
+
+      // Create animations
+      loader.createAnimations();
+      await runAllTimersAndMicrotasks({ timeoutMs: 10000 });
 
       // Verify walk animations were created for all directions
       expect(mockScene.anims.create).toHaveBeenCalledWith(

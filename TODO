@@ -1,52 +1,92 @@
+## Incremental Cache Policy Test Plan
+
+This plan focuses on incrementally building the cache policy enforcement test, starting with minimal implementation and gradually adding complexity.
+
+### Phase 1: Basic Test Setup
+1. **Minimal Test Structure**
+   - Create basic test with minimal mocks
+   - Add basic asset registration
+   - Implement simple load completion
+   - Verify basic asset state
+   - Add proper test timeout
+
+2. **Timer Control**
+   - Add proper timer setup
+   - Implement timer cleanup
+   - Add timer state verification
+   - Document timer usage
+
+### Phase 2: Asset Loading
+1. **Basic Loading**
+   - Implement minimal load completion
+   - Add load state verification
+   - Handle basic error cases
+   - Add loading timeout handling
+
+2. **Load Event Handling**
+   - Add proper event handling
+   - Implement event cleanup
+   - Add event state verification
+   - Handle event errors
+
+### Phase 3: Cache Policy
+1. **Basic Cache Policy**
+   - Add persistent asset registration
+   - Implement basic cache clearing
+   - Add cache state verification
+   - Handle cache errors
+
+2. **Cache State Management**
+   - Add cache state tracking
+   - Implement cache cleanup
+   - Add cache verification
+   - Handle cache errors
+
+### Phase 4: Test Robustness
+1. **Error Handling**
+   - Add proper error boundaries
+   - Implement error recovery
+   - Add error state verification
+   - Handle edge cases
+
+2. **State Verification**
+   - Add comprehensive state checks
+   - Implement state cleanup
+   - Add state logging
+   - Handle state errors
+
+### Next Steps
+1. Start with Phase 1: Basic Test Setup
+   - Create minimal test structure
+   - Add basic asset registration
+   - Implement simple load completion
+   - Verify basic asset state
+2. Run test and verify each step
+3. Add complexity only after basic test passes
+4. Document any issues or patterns discovered
+
+
+
 ## AssetService Implementation Plan
+
+The AssetService is a core component of our game engine's asset management system. It provides centralized control over asset loading, caching, and memory management to ensure optimal game performance and resource utilization.
+This service is responsible for handling all game assets including textures, audio, models, and other game resources.
+See design doc: /docs/asset-service-design.md
+
+**Related Documents**
+
+- @ServiceLayer-AssetService.md - Complete implementation details
+- @ServiceLayer-Overview.md - Architecture context
+- @EventBusService.ts - Event system integration 
 
 ### Phase 1: Core Framework - Asset Registry ✅
 ### Phase 2: Basic Loading System ✅
 ### Phase 3: Asset Retrieval System ✅
-
 ### Phase 4: Memory Management ✅
-1. **Asset Release Implementation** ✅
-   - Implement releaseAsset method to free individual assets ✅
-   - Add texture destruction for image assets ✅
-   - Create audio release mechanism ✅
-   - Implement proper asset state updates after release ✅
-   - Write tests for asset release ✅
-
-2. **Bulk Asset Clearing** ✅
-   - Implement clearAssets method for mass cleanup ✅
-   - Add filtering capabilities for selective clearing ✅ 
-   - Create group-based clearing functionality ✅
-   - Write tests for bulk clearing ✅
-
-3. **Memory Usage Tracking** ✅
-   - Implement getMemoryUsage method ✅
-   - Create getTotalMemoryUsed method ✅
-   - Add getMemoryUsageByType method ✅
-   - Implement size estimation for different asset types ✅
-   - Write tests for memory tracking ✅
-
-4. **Memory Monitoring System** ✅
-   - Complete enableMemoryMonitoring implementation ✅
-   - Add interval-based memory checking ✅
-   - Implement threshold-based event triggers ✅
-   - Create memory warning and critical events ✅
-   - Write tests for monitoring system ✅
 
 ### Phase 5: Performance Optimization
-1. **Cache Policy Implementation**
-   - Implement cache policy enforcement
-   - Add time-based expiration for TEMPORARY assets
-   - Create usage-based retention for AUTO assets
-   - Implement priority-based retention
-   - Write tests for cache policies
-
+1. **Cache Policy Implementation** ✅
 2. **Cache Pruning System** ✅
-   - Implement pruneCache method ✅
-   - Add LRU (Least Recently Used) strategy ✅
-   - Implement SIZE-based pruning strategy ✅
-   - Create HYBRID pruning approach ✅
-   - Add automatic pruning triggers ✅
-   - Write tests for cache pruning ✅
 
 3. **Performance Metrics**
    - Implement loading time tracking
@@ -83,3 +123,4 @@
   - Implement Performance Metrics system
   - Build Optimization Strategies
 - Begin Phase 6 once Phase 5 is complete 
+

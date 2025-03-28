@@ -2,6 +2,17 @@ import { jest } from '@jest/globals';
 import { AssetService } from '../../services/AssetService';
 import { AssetType, CachePolicy } from '../../types/assets';
 import { IRegistry } from '../../services/interfaces/IRegistry';
+import { 
+  advanceTimersAndRunMicrotasks, 
+  runAllTimersAndMicrotasks,
+  waitForCondition,
+  withFakeTimers,
+  waitForTime,
+  setupFakeTimers,
+  restoreRealTimers,
+  TimerError
+} from '../helpers/timerTestUtils';
+import { EventBusService } from '../../services/EventBusService';
 
 describe('AssetService', () => {
   let assetService: AssetService;
@@ -20,10 +31,12 @@ describe('AssetService', () => {
         json: jest.fn(),
         bitmapFont: jest.fn(),
         on: jest.fn(),
+        once: jest.fn(),
         start: jest.fn(),
       },
       textures: {
         get: jest.fn().mockReturnValue({}),
+        exists: jest.fn().mockReturnValue(false),
       },
       sound: {
         add: jest.fn().mockReturnValue({}),

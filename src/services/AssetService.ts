@@ -747,35 +747,106 @@ export class AssetService implements IAssetService {
   }
 
   /**
+   * Enforces cache policies for assets
+   * @param assetInfo The asset to check
+   * @returns true if the asset should be kept in cache, false if it should be removed
+   */
+  private enforceCachePolicy(assetInfo: AssetInfo): boolean {
+    console.log(`[CachePolicy] Checking policy for asset: ${assetInfo.key}`);
+    console.log(`[CachePolicy] Asset type: ${assetInfo.type}, Policy: ${assetInfo.cachePolicy}`);
+    console.log(`[CachePolicy] Asset loaded: ${assetInfo.loaded}, Last used: ${assetInfo.lastUsed}`);
+
+    if (!assetInfo.loaded) {
+      console.log(`[CachePolicy] Asset ${assetInfo.key} not loaded, removing from cache`);
+      return false;
+    }
+
+    switch (assetInfo.cachePolicy) {
+      case CachePolicy.PERSISTENT:
+        console.log(`[CachePolicy] Asset ${assetInfo.key} is PERSISTENT, keeping in cache`);
+        return true;
+
+      case CachePolicy.SESSION:
+        console.log(`[CachePolicy] Asset ${assetInfo.key} is SESSION, keeping in cache`);
+        return true;
+
+      case CachePolicy.LEVEL:
+        console.log(`[CachePolicy] Asset ${assetInfo.key} is LEVEL, keeping in cache (TODO: implement level-based caching)`);
+        return true;
+
+      case CachePolicy.TEMPORARY:
+        const fiveSecondsAgo = Date.now() - 5000;
+        const shouldKeep = (assetInfo.lastUsed || 0) > fiveSecondsAgo;
+        console.log(`[CachePolicy] Asset ${assetInfo.key} is TEMPORARY, last used: ${assetInfo.lastUsed}, five seconds ago: ${fiveSecondsAgo}, keeping: ${shouldKeep}`);
+        return shouldKeep;
+
+      case CachePolicy.MANUAL:
+        console.log(`[CachePolicy] Asset ${assetInfo.key} is MANUAL, keeping in cache until explicitly removed`);
+        return true;
+
+      default:
+        console.log(`[CachePolicy] Asset ${assetInfo.key} has unknown policy, defaulting to persistent behavior`);
+        return true;
+    }
+  }
+
+  /**
+   * Updates the last used timestamp for an asset
+   * @param key The asset key
+   */
+  private updateLastUsed(key: string): void {
+    const assetInfo = this.assets.get(key);
+    if (assetInfo) {
+      const oldLastUsed = assetInfo.lastUsed;
+      assetInfo.lastUsed = Date.now();
+      console.log(`[CachePolicy] Updated last used time for ${key}: ${oldLastUsed} -> ${assetInfo.lastUsed}`);
+    }
+  }
+
+  /**
    * Gets a texture asset
    * @param key Asset key
-   * @returns Phaser texture
+   * @returns The texture
+   * @throws Error if asset is not loaded or is not a texture
    */
   getTexture(key: string): Phaser.Textures.Texture {
+    console.log(`[CachePolicy] Getting texture: ${key}`);
     const assetInfo = this.assets.get(key);
 
     if (!assetInfo) {
+      console.log(`[CachePolicy] Asset ${key} not registered`);
       throw new Error(`Asset with key "${key}" is not registered`);
     }
 
     if (!assetInfo.loaded) {
+      console.log(`[CachePolicy] Asset ${key} not loaded`);
       throw new Error(`Asset with key "${key}" is not loaded yet. Call loadAsset() first.`);
     }
 
-    if (![AssetType.IMAGE, AssetType.SPRITE_SHEET, AssetType.ATLAS].includes(assetInfo.type)) {
+    if (assetInfo.type !== AssetType.IMAGE) {
+      console.log(`[CachePolicy] Asset ${key} is not a texture (type: ${assetInfo.type})`);
       throw new Error(`Asset with key "${key}" is not a texture (type: ${assetInfo.type})`);
     }
 
     // Update last used timestamp
-    assetInfo.lastUsed = Date.now();
+    this.updateLastUsed(key);
 
+    // Check cache policy
+    if (!this.enforceCachePolicy(assetInfo)) {
+      console.log(`[CachePolicy] Asset ${key} has expired based on its cache policy, releasing`);
+      this.releaseAsset(key);
+      throw new Error(`Asset with key "${key}" has expired based on its cache policy`);
+    }
+
+    console.log(`[CachePolicy] Returning texture for ${key}`);
     return this.scene.textures.get(key);
   }
 
   /**
    * Gets an audio asset
    * @param key Asset key
-   * @returns Phaser sound
+   * @returns The audio asset
+   * @throws Error if asset is not loaded or is not an audio asset
    */
   getAudio(key: string): Phaser.Sound.BaseSound {
     const assetInfo = this.assets.get(key);
@@ -789,11 +860,17 @@ export class AssetService implements IAssetService {
     }
 
     if (assetInfo.type !== AssetType.AUDIO) {
-      throw new Error(`Asset with key "${key}" is not an audio (type: ${assetInfo.type})`);
+      throw new Error(`Asset with key "${key}" is not an audio asset (type: ${assetInfo.type})`);
     }
 
     // Update last used timestamp
-    assetInfo.lastUsed = Date.now();
+    this.updateLastUsed(key);
+
+    // Check cache policy
+    if (!this.enforceCachePolicy(assetInfo)) {
+      this.releaseAsset(key);
+      throw new Error(`Asset with key "${key}" has expired based on its cache policy`);
+    }
 
     return this.scene.sound.get(key);
   }
@@ -820,7 +897,13 @@ export class AssetService implements IAssetService {
     }
 
     // Update last used timestamp
-    assetInfo.lastUsed = Date.now();
+    this.updateLastUsed(key);
+
+    // Check cache policy
+    if (!this.enforceCachePolicy(assetInfo)) {
+      this.releaseAsset(key);
+      throw new Error(`Asset with key "${key}" has expired based on its cache policy`);
+    }
 
     return this.scene.cache.json.get(key);
   }
@@ -987,38 +1070,45 @@ export class AssetService implements IAssetService {
    * @returns True if the asset was released
    */
   releaseAsset(key: string): boolean {
+    console.log(`[Release] Attempting to release asset: ${key}`);
+    
     // Validate key
     if (!key || typeof key !== 'string') {
-      console.error('[AssetService] Invalid asset key provided for release');
+      console.error('[Release] Invalid asset key provided for release');
       return false;
     }
 
     // Check if asset exists in registry
     const assetInfo = this.assets.get(key);
     if (!assetInfo) {
-      console.warn(`[AssetService] Cannot release asset "${key}": Asset is not registered`);
+      console.warn(`[Release] Cannot release asset "${key}": Asset is not registered`);
       return false;
     }
 
+    console.log(`[Release] Asset info: type=${assetInfo.type}, loaded=${assetInfo.loaded}, cachePolicy=${assetInfo.cachePolicy}`);
+
     // Check if asset is loaded
     if (!assetInfo.loaded) {
-      console.warn(`[AssetService] Cannot release asset "${key}": Asset is not loaded`);
+      console.warn(`[Release] Cannot release asset "${key}": Asset is not loaded`);
       return false;
     }
 
     // If asset is currently loading, wait for it to finish
     if (this.loadingPromises.has(key)) {
-      console.warn(`[AssetService] Cannot release asset "${key}": Asset is currently loading`);
+      console.warn(`[Release] Cannot release asset "${key}": Asset is currently loading`);
       return false;
     }
 
     try {
+      console.log(`[Release] Releasing asset ${key} of type ${assetInfo.type}`);
+      
       // Release asset based on type
       switch (assetInfo.type) {
         case AssetType.IMAGE:
         case AssetType.SPRITE_SHEET:
         case AssetType.ATLAS:
           if (this.scene.textures.exists(key)) {
+            console.log(`[Release] Removing texture: ${key}`);
             this.scene.textures.remove(key);
           }
           break;
@@ -1026,6 +1116,7 @@ export class AssetService implements IAssetService {
         case AssetType.AUDIO: {
           const sound = this.scene.sound.get(key);
           if (sound) {
+            console.log(`[Release] Destroying audio: ${key}`);
             sound.destroy();
           }
           break;
@@ -1034,6 +1125,7 @@ export class AssetService implements IAssetService {
         case AssetType.VIDEO: {
           const video = this.scene.cache.video.get(key);
           if (video) {
+            console.log(`[Release] Removing video: ${key}`);
             video.remove();
           }
           break;
@@ -1041,36 +1133,41 @@ export class AssetService implements IAssetService {
 
         case AssetType.BITMAP_FONT:
           if (this.scene.cache.bitmapFont.has(key)) {
+            console.log(`[Release] Removing bitmap font: ${key}`);
             this.scene.cache.bitmapFont.remove(key);
           }
           break;
 
         case AssetType.JSON:
           if (this.scene.cache.json.has(key)) {
+            console.log(`[Release] Removing JSON: ${key}`);
             this.scene.cache.json.remove(key);
           }
           break;
 
         case AssetType.TILEMAP:
           if (this.scene.cache.tilemap.has(key)) {
+            console.log(`[Release] Removing tilemap: ${key}`);
             this.scene.cache.tilemap.remove(key);
           }
           break;
 
         case AssetType.HTML:
           if (this.scene.cache.html.has(key)) {
+            console.log(`[Release] Removing HTML: ${key}`);
             this.scene.cache.html.remove(key);
           }
           break;
 
         case AssetType.SHADER:
           if (this.scene.cache.shader.has(key)) {
+            console.log(`[Release] Removing shader: ${key}`);
             this.scene.cache.shader.remove(key);
           }
           break;
 
         default:
-          console.warn(`[AssetService] Unsupported asset type for release: ${assetInfo.type}`);
+          console.warn(`[Release] Unsupported asset type for release: ${assetInfo.type}`);
           return false;
       }
 
@@ -1093,13 +1190,10 @@ export class AssetService implements IAssetService {
         timestamp: Date.now(),
       });
 
-      if (this.config.enableLogging) {
-        console.log(`[AssetService] Released asset from memory: ${key}`);
-      }
-
+      console.log(`[Release] Successfully released asset: ${key}`);
       return true;
     } catch (error) {
-      console.error(`[AssetService] Error releasing asset "${key}":`, error);
+      console.error(`[Release] Error releasing asset "${key}":`, error);
       return false;
     }
   }
@@ -1109,66 +1203,26 @@ export class AssetService implements IAssetService {
    * @param keys Optional array of asset keys to clear. If not provided, all loaded assets will be cleared.
    */
   clearAssets(keys?: string[]): void {
-    const assetsToRelease: string[] = [];
-
-    // If keys are provided, use them; otherwise, use all loaded assets
-    if (keys && Array.isArray(keys)) {
-      assetsToRelease.push(...keys);
-    } else {
-      // Get all loaded assets
-      this.assets.forEach((asset, key) => {
-        if (asset.loaded) {
-          assetsToRelease.push(key);
+    console.log('clearAssets called with keys:', keys);
+    
+    if (keys) {
+      // Clear specific assets
+      keys.forEach(key => {
+        const assetInfo = this.assets.get(key);
+        console.log(`Clearing specific asset: ${key}, cache policy: ${assetInfo?.cachePolicy}`);
+        if (assetInfo && assetInfo.cachePolicy !== CachePolicy.PERSISTENT) {
+          this.releaseAsset(key);
         }
       });
-    }
-
-    if (assetsToRelease.length === 0) {
-      if (this.config.enableLogging) {
-        console.log('[AssetService] No assets to clear');
-      }
-      return;
-    }
-
-    const releasedAssets: string[] = [];
-    let freedMemoryEstimate = 0;
-
-    // Release each asset
-    for (const key of assetsToRelease) {
-      const assetInfo = this.assets.get(key);
-
-      // Skip assets with PERSISTENT cache policy unless they were explicitly requested
-      if (!keys && assetInfo?.cachePolicy === CachePolicy.PERSISTENT) {
-        continue;
-      }
-
-      // Get estimated memory before releasing
-      if (assetInfo && assetInfo.loaded) {
-        // This is a rough estimate, as we don't have exact memory usage yet
-        // Will be replaced with actual memory tracking in getMemoryUsage implementation
-        freedMemoryEstimate += 1; // 1MB placeholder, will be more accurate when memory tracking is implemented
-      }
-
-      // Release the asset
-      if (this.releaseAsset(key)) {
-        releasedAssets.push(key);
-      }
-    }
-
-    // Emit memory released event
-    if (releasedAssets.length > 0) {
-      this.emitEvent('asset.memory.released', {
-        freedMemory: freedMemoryEstimate,
-        releasedAssets,
-        trigger: 'manual',
-      });
-
-      if (this.config.enableLogging) {
-        console.log(
-          `[AssetService] Cleared ${releasedAssets.length} assets from memory: ${releasedAssets.join(
-            ', '
-          )}`
-        );
+    } else {
+      // Clear all non-persistent assets
+      console.log('Clearing all non-persistent assets');
+      for (const [key, assetInfo] of this.assets.entries()) {
+        console.log(`Checking asset: ${key}, cache policy: ${assetInfo.cachePolicy}`);
+        if (assetInfo.cachePolicy !== CachePolicy.PERSISTENT) {
+          console.log(`Releasing asset: ${key}`);
+          this.releaseAsset(key);
+        }
       }
     }
   }

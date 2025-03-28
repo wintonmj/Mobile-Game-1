@@ -38,6 +38,13 @@ const MockPhaser = {
         destroy: jest.fn().mockReturnThis(),
       }),
     },
+    load: {
+      image: jest.fn(),
+      audio: jest.fn(),
+      json: jest.fn(),
+      once: jest.fn(),
+      on: jest.fn(),
+    },
     input: {
       keyboard: {
         createCursorKeys: jest.fn().mockReturnValue({
