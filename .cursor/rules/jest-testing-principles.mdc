@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: **/src/__tests__/**/*.ts
 alwaysApply: false
 ---
  # Jest Testing Principles

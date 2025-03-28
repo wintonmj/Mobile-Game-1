@@ -1,7 +1,24 @@
-import { IRegistry, Service } from './interfaces/IRegistry';
+// Define Service interface locally to avoid import issues
+export interface Service {
+  initialize?: () => Promise<void>;
+  shutdown?: () => Promise<void>;
+  onRegister?: () => void;
+  onUnregister?: () => void;
+}
 
-// Re-export the Service type
-export { Service };
+// Define IRegistry interface
+export interface IRegistry {
+  registerService<T extends Service>(serviceId: string, serviceInstance: T): void;
+  getService<T>(serviceId: string): T;
+  hasService(serviceId: string): boolean;
+  unregisterService(serviceId: string): void;
+  clear(): void;
+  registerDependencies(serviceId: string, dependencyIds: string[]): void;
+  getServiceDependencies(serviceId: string): string[];
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  initializeBasicServices(): void;
+}
 
 export interface IRegistryService extends Service {
   registerService<T extends Service>(serviceId: string, serviceInstance: T): void;
@@ -192,11 +209,11 @@ export class Registry implements IRegistry {
    * Initializes the registry with basic services required by the application
    * This includes the EventBusService that's used for decoupled communication
    */
-  initializeBasicServices(): void {
+  async initializeBasicServices(): Promise<void> {
     if (!this.hasService('eventBus')) {
       // Dynamically import to avoid circular dependencies
-      const { EventBusService } = require('./EventBusService');
-      this.registerService('eventBus', new EventBusService());
+      const EventBusModule = await import('./EventBusService');
+      this.registerService('eventBus', new EventBusModule.EventBusService());
     }
   }
 }

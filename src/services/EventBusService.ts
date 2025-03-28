@@ -1,6 +1,16 @@
 import { IEventBusService, Subscription } from './interfaces/IEventBusService';
 
 /**
+ * Base interface for all services registered in the Registry
+ */
+interface Service {
+  initialize?: () => Promise<void>;
+  shutdown?: () => Promise<void>;
+  onRegister?: () => void;
+  onUnregister?: () => void;
+}
+
+/**
  * Represents a subscription to an event.
  * Provides a method to unsubscribe from the event.
  */
@@ -20,9 +30,28 @@ class EventSubscription implements Subscription {
  * Implementation of the EventBusService interface.
  * Provides a centralized event system for decoupled component communication.
  */
-export class EventBusService implements IEventBusService {
+export class EventBusService implements IEventBusService, Service {
   private subscribers: Map<string, Set<Function>> = new Map();
   private loggingEnabled = false;
+
+  /**
+   * Lifecycle method called when the service is registered
+   */
+  onRegister(): void {
+    if (this.loggingEnabled) {
+      console.log('[EventBus] Service registered');
+    }
+  }
+
+  /**
+   * Lifecycle method called when the service is unregistered
+   */
+  onUnregister(): void {
+    this.clearAllEvents();
+    if (this.loggingEnabled) {
+      console.log('[EventBus] Service unregistered');
+    }
+  }
 
   /**
    * Emits an event with optional data to all subscribers.

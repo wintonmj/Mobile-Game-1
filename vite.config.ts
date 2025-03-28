@@ -58,5 +58,5 @@ export default defineConfig({
   },
   base: './',
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.svg'],
-  publicDir: 'src',
+  publicDir: 'public',
 }); 

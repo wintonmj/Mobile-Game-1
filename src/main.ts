@@ -6,7 +6,7 @@ import { Registry } from './services/Registry';
 async function startGame() {
   // Initialize services
   const registry = new Registry();
-  registry.initializeBasicServices(); // Registers EventBusService by default
+  await registry.initializeBasicServices(); // Registers EventBusService by default
   await registry.initialize();
 
   // Dynamically import Phaser
