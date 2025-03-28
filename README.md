@@ -125,3 +125,6 @@ The MCP server provides a set of tools that can be used with Cursor AI to debug 
    ```
    curl -X POST http://localhost:5174/api/mcp -H "Content-Type: application/json" -d '{"tool":"logGameState"}'
    ```
+
+
+create more sprites with https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/#?body=Body_color_blue&head=Human_male_blue&sex=muscular&shadow=none_Shadow&shoulders=Legion_gold 

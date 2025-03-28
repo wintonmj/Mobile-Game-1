@@ -11,7 +11,7 @@ export enum AssetType {
   VIDEO = 'video',
   TILEMAP = 'tilemap',
   HTML = 'html',
-  SHADER = 'shader'
+  SHADER = 'shader',
 }
 
 /**
@@ -19,10 +19,10 @@ export enum AssetType {
  */
 export enum CachePolicy {
   PERSISTENT = 'persistent', // Keep in memory until explicitly released
-  SESSION = 'session',       // Keep for current game session
-  LEVEL = 'level',           // Keep only while current level is active
-  TEMPORARY = 'temporary',   // Release as soon as possible after use
-  MANUAL = 'manual'          // Only load/unload through explicit calls
+  SESSION = 'session', // Keep for current game session
+  LEVEL = 'level', // Keep only while current level is active
+  TEMPORARY = 'temporary', // Release as soon as possible after use
+  MANUAL = 'manual', // Only load/unload through explicit calls
 }
 
 /**
@@ -43,7 +43,7 @@ export interface AssetOptions {
   // Common options
   crossOrigin?: string;
   xhrSettings?: Phaser.Types.Loader.XHRSettingsObject;
-  
+
   // Type-specific options
   frameConfig?: Phaser.Types.Loader.FileTypes.ImageFrameConfig;
   atlasURL?: string;
@@ -86,4 +86,4 @@ export interface CachePrunedData {
   removedCount: number;
   freedMemory: number;
   removedAssets: string[];
-} 
+}

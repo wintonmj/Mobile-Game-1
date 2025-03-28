@@ -1,9 +1,4 @@
----
-description: 
-globs: **/src/controllers/**/*.ts,**/src/models/**/*.ts,**/src/views/**/*.ts
-alwaysApply: false
----
- ## MVC Architecture Guidelines
+## MVC Architecture Guidelines
 
 ### Models
 - Models represent the data and business logic
@@ -24,4 +19,4 @@ alwaysApply: false
 - Place all controller classes in the `src/controllers` directory
 - Controllers connect models and views
 - Controllers should not contain business logic
-- Use dependency injection to provide models to controllers
+- Use dependency injection to provide models to controllers 

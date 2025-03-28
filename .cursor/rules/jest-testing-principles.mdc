@@ -1,11 +1,43 @@
----
-description: 
-globs: **/src/__tests__/**/*.ts
-alwaysApply: false
----
- # Jest Testing Principles
+# Jest Testing Principles
 
 ## Mock Implementation Patterns
+
+### TypeScript Interface Mocking
+**Description:** Create type-safe mocks for TypeScript interfaces that satisfy the type system.
+
+**When to use:**
+- When mocking services or classes that implement complex TypeScript interfaces
+- When you need to ensure type safety in your tests
+- When working with generic methods or interfaces
+
+**When to use alternatives:**
+- For simple objects without complex type requirements, basic Jest mocks are sufficient
+- When TypeScript isn't used in the project
+
+**Example:**
+```typescript
+// Mocking a complex interface (like IRegistry)
+const mockRegistry = {
+  getService: jest.fn<() => never>().mockImplementation(() => {
+    throw new Error('Service not found');
+  }),
+  registerService: jest.fn<() => void>(),
+  hasService: jest.fn<() => boolean>(),
+  unregisterService: jest.fn<() => void>(),
+  clear: jest.fn<() => void>(),
+  registerDependencies: jest.fn<() => void>(),
+  getServiceDependencies: jest.fn<() => string[]>().mockReturnValue([]),
+  initialize: jest.fn<() => Promise<void>>().mockResolvedValue(void 0),
+  shutdown: jest.fn<() => Promise<void>>().mockResolvedValue(void 0),
+  initializeBasicServices: jest.fn<() => void>()
+} as unknown as IRegistry;
+```
+
+**Key considerations:**
+- Use `jest.fn<ReturnType, ParamTypes>()` to properly type mock functions
+- Use `mockImplementation()` for custom logic that maintains type safety
+- Use `void 0` instead of `undefined` for Promise resolutions
+- Cast the final object with `as unknown as Interface` to satisfy TypeScript
 
 ### Singleton Mock Pattern
 **Description:** Use a singleton pattern for services/controllers that maintain state between tests.

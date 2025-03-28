@@ -1,2 +1,0 @@
-initialize: jest.fn<Promise<void>, []>().mockReturnValue(Promise.resolve()),
-shutdown: jest.fn<Promise<void>, []>().mockReturnValue(Promise.resolve()), 
