@@ -1,6 +1,6 @@
 import { IRegistry } from '../services/interfaces/IRegistry';
 import { IEventBusService } from '../services/interfaces/IEventBusService';
-import { GameEvents } from '../controllers/GameController';
+import { GameEvents } from '../events/GameEvents';
 import { Actions } from '../models/Actions';
 
 /**

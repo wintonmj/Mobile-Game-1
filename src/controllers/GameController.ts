@@ -6,18 +6,20 @@ import { Actions } from '../models/Actions';
 import { ObjectPlacementController } from './ObjectPlacementController';
 import { IEventBusService } from '../services/interfaces/IEventBusService';
 import { IRegistry } from '../services/interfaces/IRegistry';
+import { GameEvents as EventCatalog } from '../events/GameEvents';
 
 // Define event names as constants to ensure consistency
+// This is kept for backward compatibility - new code should use the EventCatalog import
 export const GameEvents = {
   PLAYER: {
-    MOVED: 'player.moved',
-    ACTION_CHANGED: 'player.action.changed',
-    DIRECTION_CHANGED: 'player.direction.changed',
-    COLLISION: 'player.collision'
+    MOVED: EventCatalog.PLAYER.MOVED,
+    ACTION_CHANGED: EventCatalog.PLAYER.ACTION_CHANGED,
+    DIRECTION_CHANGED: EventCatalog.PLAYER.DIRECTION_CHANGED,
+    COLLISION: EventCatalog.PLAYER.COLLISION
   },
   GAME: {
-    INITIALIZED: 'game.initialized',
-    UPDATED: 'game.updated'
+    INITIALIZED: EventCatalog.GAME.INITIALIZED,
+    UPDATED: EventCatalog.GAME.UPDATED
   }
 };
 
