@@ -11,6 +11,11 @@ interface Service {
 }
 
 /**
+ * Type for callback functions that handle event data
+ */
+type EventCallback<T = unknown> = (data?: T) => void;
+
+/**
  * Represents a subscription to an event.
  * Provides a method to unsubscribe from the event.
  */
@@ -18,7 +23,7 @@ class EventSubscription implements Subscription {
   constructor(
     private eventBus: EventBusService,
     private event: string,
-    private callback: Function
+    private callback: EventCallback
   ) {}
 
   unsubscribe(): void {
@@ -31,7 +36,7 @@ class EventSubscription implements Subscription {
  * Provides a centralized event system for decoupled component communication.
  */
 export class EventBusService implements IEventBusService, Service {
-  private subscribers: Map<string, Set<Function>> = new Map();
+  private subscribers: Map<string, Set<EventCallback>> = new Map();
   private loggingEnabled = false;
 
   /**
@@ -66,7 +71,7 @@ export class EventBusService implements IEventBusService, Service {
     // Handle direct subscribers
     const subscribers = this.subscribers.get(event);
     if (subscribers) {
-      this.notifySubscribers(subscribers, data);
+      this.notifySubscribers<T>(subscribers, data);
     }
 
     // Handle wildcard subscribers (e.g., 'player.*' should receive 'player.move')
@@ -75,9 +80,9 @@ export class EventBusService implements IEventBusService, Service {
       parts.pop();
       const wildcardEvent = parts.length > 0 ? `${parts.join('.')}.*` : '*';
       const wildcardSubscribers = this.subscribers.get(wildcardEvent);
-      
+
       if (wildcardSubscribers) {
-        this.notifySubscribers(wildcardSubscribers, data);
+        this.notifySubscribers<T>(wildcardSubscribers, data);
       }
     }
   }
@@ -88,19 +93,19 @@ export class EventBusService implements IEventBusService, Service {
    * @param callback The function to call when the event is emitted
    * @returns A subscription object that can be used to unsubscribe
    */
-  on<T>(event: string, callback: (data?: T) => void): Subscription {
+  on<T>(event: string, callback: EventCallback<T>): Subscription {
     if (!this.subscribers.has(event)) {
       this.subscribers.set(event, new Set());
     }
 
     const subscribers = this.subscribers.get(event)!;
-    subscribers.add(callback);
+    subscribers.add(callback as EventCallback);
 
     if (this.loggingEnabled) {
       console.log(`[EventBus] Subscribed to: ${event}, count: ${subscribers.size}`);
     }
 
-    return new EventSubscription(this, event, callback);
+    return new EventSubscription(this, event, callback as EventCallback);
   }
 
   /**
@@ -108,12 +113,12 @@ export class EventBusService implements IEventBusService, Service {
    * @param event The event name
    * @param callback The callback function to remove
    */
-  off(event: string, callback: Function): void {
+  off<T>(event: string, callback: EventCallback<T>): void {
     const subscribers = this.subscribers.get(event);
     if (!subscribers) return;
 
-    subscribers.delete(callback);
-    
+    subscribers.delete(callback as EventCallback);
+
     if (subscribers.size === 0) {
       this.subscribers.delete(event);
     }
@@ -129,14 +134,14 @@ export class EventBusService implements IEventBusService, Service {
    * @param callback The function to call when the event is emitted
    * @returns A subscription object that can be used to unsubscribe
    */
-  once<T>(event: string, callback: (data?: T) => void): Subscription {
-    const wrappedCallback = ((data?: T) => {
+  once<T>(event: string, callback: EventCallback<T>): Subscription {
+    const wrappedCallback = (data?: T) => {
       // Automatically unsubscribe after first call
-      this.off(event, wrappedCallback);
+      this.off(event, wrappedCallback as EventCallback);
       callback(data);
-    }) as any;
+    };
 
-    return this.on(event, wrappedCallback);
+    return this.on<T>(event, wrappedCallback);
   }
 
   /**
@@ -152,7 +157,7 @@ export class EventBusService implements IEventBusService, Service {
    */
   clearAllEvents(): void {
     this.subscribers.clear();
-    
+
     if (this.loggingEnabled) {
       console.log('[EventBus] All events cleared');
     }
@@ -182,8 +187,8 @@ export class EventBusService implements IEventBusService, Service {
    * @param subscribers The set of subscriber callbacks
    * @param data The data to pass to subscribers
    */
-  private notifySubscribers<T>(subscribers: Set<Function>, data?: T): void {
-    subscribers.forEach(callback => {
+  private notifySubscribers<T>(subscribers: Set<EventCallback>, data?: T): void {
+    subscribers.forEach((callback) => {
       try {
         callback(data);
       } catch (error) {
@@ -191,4 +196,4 @@ export class EventBusService implements IEventBusService, Service {
       }
     });
   }
-} 
+}

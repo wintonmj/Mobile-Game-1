@@ -22,4 +22,4 @@ export interface IRegistry {
   initialize(): Promise<void>;
   shutdown(): Promise<void>;
   initializeBasicServices(): void;
-} 
+}

@@ -108,16 +108,16 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
           // Relative path without src prefix (traditional assets folder pattern)
           `assets/sprites/Entities/Npc's/Knight/Idle/Idle-Sheet.png`,
           // Direct path from base path
-          `${basePath}Idle/Idle-Sheet.png`
+          `${basePath}Idle/Idle-Sheet.png`,
         ];
 
         // Print all paths we're going to try
         console.log('Attempting to load Knight spritesheet from these paths:');
-        possiblePaths.forEach(path => console.log(`- ${path}`));
+        possiblePaths.forEach((path) => console.log(`- ${path}`));
 
         // Try each path
         let loaded = false;
-        
+
         // Check if already loaded to prevent duplicate loading
         if (!this.scene.textures.exists(key)) {
           // Add specific file complete listener for this asset
@@ -141,7 +141,7 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
                 frameWidth: 32,
                 frameHeight: 32,
               });
-              
+
               // Start loading if not already in progress
               if (this.scene.load.isLoading() === false) {
                 this.scene.load.start();
@@ -184,7 +184,9 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
         console.log(`Found ${frameCount} frames for texture ${spriteKey}`);
 
         if (frameCount <= 0) {
-          console.warn(`Texture ${spriteKey} has no frames available, will create fallback animation`);
+          console.warn(
+            `Texture ${spriteKey} has no frames available, will create fallback animation`
+          );
           this.createStaticFallbackAnimation();
           return;
         }
@@ -193,7 +195,9 @@ export class NPCAnimationLoader extends BaseAnimationLoader {
         const actualFrameCount = 4;
         const maxFrame = Math.min(actualFrameCount - 1, frameCount - 1);
 
-        console.log(`Creating animations for Knight with ${maxFrame + 1} frames from spritesheet ${spriteKey}`);
+        console.log(
+          `Creating animations for Knight with ${maxFrame + 1} frames from spritesheet ${spriteKey}`
+        );
 
         // Create animations for all directions using the same sprite
         ['down', 'up', 'left', 'right'].forEach((direction) => {

@@ -2,6 +2,11 @@ import { GameScene } from './views/GameScene';
 import { PhaserLoader } from './models/PhaserLoader';
 import { Registry } from './services/Registry';
 
+// Define a global window extension with the gameRegistry property
+interface GameWindow extends Window {
+  gameRegistry?: Registry;
+}
+
 // Use async loading to initialize the game
 async function startGame() {
   // Initialize services
@@ -24,17 +29,17 @@ async function startGame() {
         debug: false,
       },
     },
-    scene: [GameScene]
+    scene: [GameScene],
   };
 
   // Make registry available for scenes to use
-  (window as any).gameRegistry = registry;
+  (window as GameWindow).gameRegistry = registry;
 
   const game = new Phaser.Game(config);
 
   // Add event listener for when the game is about to be destroyed
   window.addEventListener('beforeunload', () => {
-    registry.shutdown().catch(err => console.error('Error shutting down services:', err));
+    registry.shutdown().catch((err) => console.error('Error shutting down services:', err));
     game.destroy(true);
   });
 }

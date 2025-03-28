@@ -9,6 +9,13 @@ Group related functionality into appropriate directories (models, views, control
 Keep files focused on a single responsibility
 Maximum file length: 300 lines (refactor if longer)
 Organize code within files: imports first, followed by interfaces/types, then classes/functions
+Type Definitions
+Always define explicit types, avoid 'any' type
+Use TypeScript interfaces for complex object shapes
+Define type aliases for function signatures and union types
+Use generic types when appropriate
+Export types that are used across multiple files
+Use type narrowing with type guards when necessary
 Naming Conventions
 Use PascalCase for classes, interfaces, types, and enums
 Example: PlayerView, InputController, Direction
@@ -17,13 +24,6 @@ Example: getPosition(), isWalking, toggleCarrying()
 Use UPPER_SNAKE_CASE for constants
 Prefix interfaces with 'I' if they are for implementation inheritance
 Use descriptive, meaningful names that convey purpose
-Type Definitions
-Always define explicit types, avoid 'any' type
-Use TypeScript interfaces for complex object shapes
-Define type aliases for function signatures and union types
-Use generic types when appropriate
-Export types that are used across multiple files
-Use type narrowing with type guards when necessary
 Classes and Objects
 Use access modifiers for all class members (public, private, protected)
 Initialize class properties either in declaration or constructor

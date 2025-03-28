@@ -11,6 +11,13 @@ import { NotOccupiedConstraint } from '../models/constraints/NotOccupiedConstrai
 import { WalkableConstraint } from '../models/constraints/WalkableConstraint';
 
 /**
+ * Interface for serialized controller data
+ */
+export interface ObjectPlacementControllerData {
+  objectPositions: Record<string, { x: number; y: number }>;
+}
+
+/**
  * Controller that manages the placement of objects in the game world
  */
 export class ObjectPlacementController {
@@ -326,8 +333,8 @@ export class ObjectPlacementController {
   /**
    * Serialize the placement state for saving
    */
-  public serialize(): any {
-    const data: any = {
+  public serialize(): ObjectPlacementControllerData {
+    const data: ObjectPlacementControllerData = {
       objectPositions: {},
     };
 
@@ -346,16 +353,18 @@ export class ObjectPlacementController {
   /**
    * Deserialize and restore placement state
    */
-  public deserialize(data: any): void {
+  public deserialize(data: ObjectPlacementControllerData): void {
     if (data.objectPositions) {
       // Restore positions of all objects
-      Object.entries(data.objectPositions).forEach(([id, pos]: [string, any]) => {
-        const object = this.objects.get(id);
-        if (object) {
-          object.setPosition(pos.x, pos.y);
-          this.spatialIndex.insert(id, pos.x, pos.y);
+      Object.entries(data.objectPositions).forEach(
+        ([id, pos]: [string, { x: number; y: number }]) => {
+          const object = this.objects.get(id);
+          if (object) {
+            object.setPosition(pos.x, pos.y);
+            this.spatialIndex.insert(id, pos.x, pos.y);
+          }
         }
-      });
+      );
     }
   }
 

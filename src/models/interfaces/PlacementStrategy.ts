@@ -1,4 +1,5 @@
 import { Placeable } from './Placeable';
+import { ObjectPlacementController } from '../../controllers/ObjectPlacementController';
 
 /**
  * Interface for placement strategies that find valid positions for objects
@@ -10,7 +11,10 @@ export interface PlacementStrategy {
    * @param object The object to place
    * @returns A valid position or null if no valid position could be found
    */
-  findPosition(controller: any, object: Placeable): { x: number; y: number } | null;
+  findPosition(
+    controller: ObjectPlacementController,
+    object: Placeable
+  ): { x: number; y: number } | null;
 
   /**
    * Get the name of this strategy (for debugging and serialization)

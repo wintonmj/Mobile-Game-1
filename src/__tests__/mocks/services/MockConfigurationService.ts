@@ -42,7 +42,7 @@ export class MockConfigurationService implements Service {
       current = (current as Record<string, unknown>)[part];
     }
 
-    return (current !== undefined ? current as T : defaultValue as T);
+    return current !== undefined ? (current as T) : (defaultValue as T);
   }
 
   /**

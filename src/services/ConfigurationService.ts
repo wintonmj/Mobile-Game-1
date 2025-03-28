@@ -7,9 +7,42 @@ export interface ValidationResult {
   errors?: string[];
 }
 
-export interface ConfigSchema {
-  properties: Record<string, any>;
+/**
+ * JSON Schema property type definition
+ */
+export interface SchemaProperty {
+  type: string;
+  properties?: Record<string, SchemaProperty>;
+  items?: SchemaProperty;
   required?: string[];
+  [key: string]: unknown;
+}
+
+/**
+ * Configuration schema definition
+ */
+export interface ConfigSchema {
+  properties: Record<string, SchemaProperty>;
+  required?: string[];
+}
+
+/**
+ * Type for configuration objects
+ */
+export type ConfigValue = string | number | boolean | null | ConfigObject | ConfigValue[];
+
+/**
+ * Interface for configuration objects
+ */
+export interface ConfigObject {
+  [key: string]: ConfigValue;
+}
+
+/**
+ * Interface for error objects with code property
+ */
+interface ErrorWithCode extends Error {
+  code: string;
 }
 
 export type Environment = 'dev' | 'test' | 'prod';
@@ -37,7 +70,7 @@ export function enableTestMode(enabled: boolean = true): void {
  * @param env Environment
  * @param config Configuration object
  */
-export function setTestConfiguration(env: Environment, config: Record<string, any>): void {
+export function setTestConfiguration(env: Environment, config: ConfigObject): void {
   if (!isTestMode) {
     throw new Error('Cannot set test configuration when not in test mode');
   }
@@ -67,7 +100,7 @@ export function clearTestConfiguration(env: Environment): void {
 }
 
 export class ConfigurationService implements Service {
-  private config: Record<string, any> = {};
+  private config: ConfigObject = {};
   private currentEnvironment: Environment = 'dev';
 
   /**
@@ -76,9 +109,9 @@ export class ConfigurationService implements Service {
    * @param defaultValue Optional default value if the key doesn't exist
    * @returns The configuration value or the default value
    */
-  get<T>(key: string, defaultValue?: T): T {
+  get<T extends ConfigValue>(key: string, defaultValue?: T): T {
     const value = this.getNestedValue(this.config, key);
-    return value !== undefined ? value : (defaultValue as T);
+    return value !== undefined ? (value as T) : (defaultValue as T);
   }
 
   /**
@@ -86,7 +119,7 @@ export class ConfigurationService implements Service {
    * @param key The configuration key (supports dot notation for nested values)
    * @param value The value to set
    */
-  set<T>(key: string, value: T): void {
+  set<T extends ConfigValue>(key: string, value: T): void {
     this.setNestedValue(this.config, key, value);
   }
 
@@ -96,10 +129,18 @@ export class ConfigurationService implements Service {
    * @param path The dot-notation path
    * @returns The value at the path or undefined if not found
    */
-  private getNestedValue(obj: Record<string, any>, path: string): any {
-    return path.split('.').reduce((current, part) => {
-      return current && typeof current === 'object' ? current[part] : undefined;
-    }, obj);
+  private getNestedValue(obj: ConfigObject, path: string): ConfigValue | undefined {
+    return path.split('.').reduce<ConfigValue | undefined>((current, part) => {
+      if (
+        current === undefined ||
+        current === null ||
+        typeof current !== 'object' ||
+        Array.isArray(current)
+      ) {
+        return undefined;
+      }
+      return (current as ConfigObject)[part];
+    }, obj as ConfigValue);
   }
 
   /**
@@ -108,7 +149,7 @@ export class ConfigurationService implements Service {
    * @param path The dot-notation path
    * @param value The value to set
    */
-  private setNestedValue(obj: Record<string, any>, path: string, value: any): void {
+  private setNestedValue(obj: ConfigObject, path: string, value: ConfigValue): void {
     const parts = path.split('.');
     const lastPart = parts.pop()!;
 
@@ -117,7 +158,11 @@ export class ConfigurationService implements Service {
       if (!(part in current)) {
         current[part] = {};
       }
-      current = current[part];
+      const next = current[part];
+      if (typeof next !== 'object' || next === null || Array.isArray(next)) {
+        current[part] = {};
+      }
+      current = current[part] as ConfigObject;
     }
 
     current[lastPart] = value;
@@ -185,7 +230,7 @@ export class ConfigurationService implements Service {
       }
 
       try {
-        const config = JSON.parse(configContent);
+        const config = JSON.parse(configContent) as ConfigObject;
         // Merge the new configuration with existing config
         this.config = { ...this.config, ...config };
         console.log('Config parsed and merged successfully');
@@ -217,7 +262,7 @@ export class ConfigurationService implements Service {
       }
 
       // Check for file not found error
-      if ('code' in typedError && (typedError as any).code === 'ENOENT') {
+      if ('code' in typedError && (typedError as ErrorWithCode).code === 'ENOENT') {
         throw new ConfigurationError(
           `Configuration file not found: ${configPath}`,
           'FILE_NOT_FOUND'
@@ -225,7 +270,7 @@ export class ConfigurationService implements Service {
       }
 
       // Check for permission error
-      if ('code' in typedError && (typedError as any).code === 'EACCES') {
+      if ('code' in typedError && (typedError as ErrorWithCode).code === 'EACCES') {
         throw new ConfigurationError(
           `Permission denied when accessing configuration file: ${configPath}`,
           'PERMISSION_ERROR'

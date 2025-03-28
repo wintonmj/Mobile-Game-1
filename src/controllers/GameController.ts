@@ -8,6 +8,11 @@ import { IEventBusService } from '../services/interfaces/IEventBusService';
 import { IRegistry } from '../services/interfaces/IRegistry';
 import { GameEvents as EventCatalog } from '../events/GameEvents';
 
+// Define a global window extension with the gameRegistry property
+interface GameWindow extends Window {
+  gameRegistry?: IRegistry;
+}
+
 // Define event names as constants to ensure consistency
 // This is kept for backward compatibility - new code should use the EventCatalog import
 export const GameEvents = {
@@ -15,12 +20,12 @@ export const GameEvents = {
     MOVED: EventCatalog.PLAYER.MOVED,
     ACTION_CHANGED: EventCatalog.PLAYER.ACTION_CHANGED,
     DIRECTION_CHANGED: EventCatalog.PLAYER.DIRECTION_CHANGED,
-    COLLISION: EventCatalog.PLAYER.COLLISION
+    COLLISION: EventCatalog.PLAYER.COLLISION,
   },
   GAME: {
     INITIALIZED: EventCatalog.GAME.INITIALIZED,
-    UPDATED: EventCatalog.GAME.UPDATED
-  }
+    UPDATED: EventCatalog.GAME.UPDATED,
+  },
 };
 
 interface PlayerView {
@@ -52,9 +57,12 @@ export class GameController {
     // Get the EventBusService from the registry if available
     if (registry) {
       this.eventBus = registry.getService('eventBus') as IEventBusService;
-    } else if ((window as any).gameRegistry) {
+    } else if ((window as GameWindow).gameRegistry) {
       // Fallback to global registry if available
-      this.eventBus = (window as any).gameRegistry.getService('eventBus') as IEventBusService;
+      const gameRegistry = (window as GameWindow).gameRegistry;
+      if (gameRegistry) {
+        this.eventBus = gameRegistry.getService('eventBus') as IEventBusService;
+      }
     }
   }
 
@@ -85,7 +93,7 @@ export class GameController {
     if (this.eventBus) {
       this.eventBus.emit(GameEvents.GAME.INITIALIZED, {
         playerPosition: this.player.getPosition(),
-        dungeonSize: this.dungeon.getSize()
+        dungeonSize: this.dungeon.getSize(),
       });
     }
   }
@@ -139,19 +147,19 @@ export class GameController {
     // Emit game update event
     if (this.eventBus) {
       this.eventBus.emit(GameEvents.GAME.UPDATED, {
-        deltaTime: this.scene.game.loop.delta / 1000
+        deltaTime: this.scene.game.loop.delta / 1000,
       });
     }
   }
 
   // Helper methods to emit events
-  private emitPlayerMoved(position: { x: number, y: number }): void {
+  private emitPlayerMoved(position: { x: number; y: number }): void {
     if (this.eventBus) {
       this.eventBus.emit(GameEvents.PLAYER.MOVED, {
         x: position.x,
         y: position.y,
         tileX: Math.floor(position.x / this.dungeon.tileSize),
-        tileY: Math.floor(position.y / this.dungeon.tileSize)
+        tileY: Math.floor(position.y / this.dungeon.tileSize),
       });
     }
   }
@@ -166,8 +174,8 @@ export class GameController {
           Actions.WALKING,
           Actions.CARRY_IDLE,
           Actions.CARRY_WALK,
-          Actions.CARRY_RUN
-        ].includes(action)
+          Actions.CARRY_RUN,
+        ].includes(action),
       });
     }
   }
@@ -255,7 +263,7 @@ export class GameController {
           direction: deltaX > 0 ? 'right' : 'left',
           position: { x: newX, y: playerPosition.y },
           tileX: Math.floor(newX / this.dungeon.tileSize),
-          tileY: Math.floor(playerPosition.y / this.dungeon.tileSize)
+          tileY: Math.floor(playerPosition.y / this.dungeon.tileSize),
         });
       }
     }
@@ -271,7 +279,7 @@ export class GameController {
           direction: deltaY > 0 ? 'down' : 'up',
           position: { x: playerPosition.x, y: newY },
           tileX: Math.floor(playerPosition.x / this.dungeon.tileSize),
-          tileY: Math.floor(newY / this.dungeon.tileSize)
+          tileY: Math.floor(newY / this.dungeon.tileSize),
         });
       }
     }

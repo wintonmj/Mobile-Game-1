@@ -6,11 +6,11 @@
 import { IRegistry } from '../services/interfaces/IRegistry';
 import { IEventBusService } from '../services/interfaces/IEventBusService';
 import { GameEvents } from '../events/GameEvents';
-import { 
-  PlayerMovedEventData, 
-  PlayerActionEventData, 
+import {
+  PlayerMovedEventData,
+  PlayerActionEventData,
   DirectionChangedEventData,
-  GameInitializedEventData
+  GameInitializedEventData,
 } from '../events/GameEvents';
 
 /**
@@ -35,7 +35,7 @@ export class PlayerTracker {
     // Player movement
     this.subscriptions.push(
       this.eventBus.on<PlayerMovedEventData>(
-        GameEvents.PLAYER.MOVED, 
+        GameEvents.PLAYER.MOVED,
         this.handlePlayerMoved.bind(this)
       )
     );
@@ -43,7 +43,7 @@ export class PlayerTracker {
     // Player direction
     this.subscriptions.push(
       this.eventBus.on<DirectionChangedEventData>(
-        GameEvents.PLAYER.DIRECTION_CHANGED, 
+        GameEvents.PLAYER.DIRECTION_CHANGED,
         this.handleDirectionChanged.bind(this)
       )
     );
@@ -51,7 +51,7 @@ export class PlayerTracker {
     // Player action
     this.subscriptions.push(
       this.eventBus.on<PlayerActionEventData>(
-        GameEvents.PLAYER.ACTION_CHANGED, 
+        GameEvents.PLAYER.ACTION_CHANGED,
         this.handleActionChanged.bind(this)
       )
     );
@@ -59,7 +59,7 @@ export class PlayerTracker {
     // Game initialization
     this.subscriptions.push(
       this.eventBus.on<GameInitializedEventData>(
-        GameEvents.GAME.INITIALIZED, 
+        GameEvents.GAME.INITIALIZED,
         this.handleGameInitialized.bind(this)
       )
     );
@@ -80,12 +80,16 @@ export class PlayerTracker {
   private handleActionChanged(data?: PlayerActionEventData): void {
     if (!data) return;
     this.playerAction = data.action;
-    console.log(`Player action: ${data.action} (${data.isInterruptible ? 'Interruptible' : 'Non-interruptible'})`);
+    console.log(
+      `Player action: ${data.action} (${data.isInterruptible ? 'Interruptible' : 'Non-interruptible'})`
+    );
   }
 
   private handleGameInitialized(data?: GameInitializedEventData): void {
     if (!data) return;
-    console.log(`Game initialized with player at: (${data.playerPosition.x}, ${data.playerPosition.y})`);
+    console.log(
+      `Game initialized with player at: (${data.playerPosition.x}, ${data.playerPosition.y})`
+    );
     if (data.dungeonSize) {
       console.log(`Dungeon size: ${data.dungeonSize.width}x${data.dungeonSize.height}`);
     }
@@ -100,9 +104,9 @@ export class PlayerTracker {
       x,
       y,
       tileX: Math.floor(x / tileSize),
-      tileY: Math.floor(y / tileSize)
+      tileY: Math.floor(y / tileSize),
     };
-    
+
     // Emit the teleported event with properly structured data
     this.eventBus.emit(GameEvents.PLAYER.TELEPORTED, teleportData);
     console.log(`Player teleported to: (${x}, ${y})`);
@@ -112,7 +116,7 @@ export class PlayerTracker {
    * Clean up subscriptions when component is destroyed
    */
   public destroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions = [];
   }
 
@@ -127,7 +131,7 @@ export class PlayerTracker {
     return {
       position: this.playerPosition,
       direction: this.playerDirection,
-      action: this.playerAction
+      action: this.playerAction,
     };
   }
 }
@@ -137,4 +141,4 @@ export class PlayerTracker {
  */
 export function createPlayerTracker(registry: IRegistry): PlayerTracker {
   return new PlayerTracker(registry);
-} 
+}

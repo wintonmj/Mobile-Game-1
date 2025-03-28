@@ -1,5 +1,6 @@
 import { GridPosition } from '../interfaces/GridSystem';
 import { PlacementConstraint } from '../interfaces/PlacementConstraint';
+import { ObjectPlacementController } from '../../controllers/ObjectPlacementController';
 
 /**
  * Constraint that requires positions to not be already occupied by another object
@@ -12,7 +13,7 @@ export class NotOccupiedConstraint implements PlacementConstraint {
     this.excludeIds = excludeIds;
   }
 
-  public isSatisfied(position: GridPosition, controller: any): boolean {
+  public isSatisfied(position: GridPosition, controller: ObjectPlacementController): boolean {
     // Convert grid position to world coordinates
     const gridSystem = controller.getGridSystem();
     const worldPos = gridSystem.gridToWorld(position);

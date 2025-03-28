@@ -1,6 +1,14 @@
 import { PlacementConstraint } from './PlacementConstraint';
 
 /**
+ * Interface representing serialized object data
+ */
+export interface PlaceableSerializedData {
+  position: { x: number; y: number };
+  [key: string]: unknown;
+}
+
+/**
  * Interface for objects that can be placed in the game world
  */
 export interface Placeable {
@@ -33,10 +41,10 @@ export interface Placeable {
   /**
    * Serialize the object's state
    */
-  serialize?(): any;
+  serialize?(): PlaceableSerializedData;
 
   /**
    * Deserialize the object's state
    */
-  deserialize?(data: any): void;
+  deserialize?(data: PlaceableSerializedData): void;
 }

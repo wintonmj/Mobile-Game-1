@@ -26,11 +26,17 @@ interface MockEnvSpecificService extends Service {
   };
 }
 
-const createMockEnvSpecificService = (registry: Registry): MockEnvSpecificService & EnvServiceMethods => {
+const createMockEnvSpecificService = (
+  registry: Registry
+): MockEnvSpecificService & EnvServiceMethods => {
   // Properly type the mock functions using Jest best practices
   const mockFns = {
-    initialize: jest.fn<() => Promise<void>>().mockImplementation((): Promise<void> => Promise.resolve()),
-    shutdown: jest.fn<() => Promise<void>>().mockImplementation((): Promise<void> => Promise.resolve()),
+    initialize: jest
+      .fn<() => Promise<void>>()
+      .mockImplementation((): Promise<void> => Promise.resolve()),
+    shutdown: jest
+      .fn<() => Promise<void>>()
+      .mockImplementation((): Promise<void> => Promise.resolve()),
   };
 
   return {

@@ -6,6 +6,11 @@ import { PlayerView } from './PlayerView';
 import { NPCView } from './NPCView';
 import { IRegistry } from '../services/interfaces/IRegistry';
 
+// Define a global window extension with the gameRegistry property
+interface GameWindow extends Window {
+  gameRegistry?: IRegistry;
+}
+
 // Create a more specific type for our scene objects
 interface GameObject {
   setOrigin(x: number): GameObject;
@@ -92,7 +97,7 @@ export class GameScene {
 
   create(): void {
     // Get the registry from the window global
-    const registry = (window as any).gameRegistry as IRegistry | undefined;
+    const registry = (window as GameWindow).gameRegistry;
 
     // TypeScript doesn't know about the scene structure, so we use type assertion
     this.controller = new GameController(

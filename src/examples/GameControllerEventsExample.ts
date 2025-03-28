@@ -13,7 +13,7 @@ import { Actions } from '../models/Actions';
 class MinimapUI {
   private eventBus: IEventBusService;
   private subscriptions: Array<{ unsubscribe: () => void }> = [];
-  private playerPosition: { x: number, y: number, tileX: number, tileY: number } | null = null;
+  private playerPosition: { x: number; y: number; tileX: number; tileY: number } | null = null;
 
   constructor(registry: IRegistry) {
     this.eventBus = registry.getService('eventBus') as IEventBusService;
@@ -29,33 +29,35 @@ class MinimapUI {
     );
   }
 
-  private handlePlayerMoved(data?: { x: number, y: number, tileX: number, tileY: number }): void {
+  private handlePlayerMoved(data?: { x: number; y: number; tileX: number; tileY: number }): void {
     if (!data) return;
     this.playerPosition = data;
     this.updateMinimapDisplay();
   }
 
-  private handleGameInitialized(data?: { playerPosition: { x: number, y: number } }): void {
+  private handleGameInitialized(data?: { playerPosition: { x: number; y: number } }): void {
     if (!data || !data.playerPosition) return;
-    
+
     // Set initial position
     this.playerPosition = {
       ...data.playerPosition,
       tileX: Math.floor(data.playerPosition.x / 32), // Assuming tileSize is 32
-      tileY: Math.floor(data.playerPosition.y / 32)
+      tileY: Math.floor(data.playerPosition.y / 32),
     };
     this.updateMinimapDisplay();
   }
 
   private updateMinimapDisplay(): void {
     if (!this.playerPosition) return;
-    
-    console.log(`Minimap: Player at tile (${this.playerPosition.tileX}, ${this.playerPosition.tileY})`);
+
+    console.log(
+      `Minimap: Player at tile (${this.playerPosition.tileX}, ${this.playerPosition.tileY})`
+    );
     // Update minimap display logic
   }
 
   public cleanup(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 }
 
@@ -74,15 +76,15 @@ class PlayerAnimationController {
     this.subscriptions.push(
       this.eventBus.on(GameEvents.PLAYER.ACTION_CHANGED, this.handleActionChanged.bind(this))
     );
-    
+
     this.subscriptions.push(
       this.eventBus.on(GameEvents.PLAYER.DIRECTION_CHANGED, this.handleDirectionChanged.bind(this))
     );
   }
 
-  private handleActionChanged(data?: { action: Actions, isInterruptible: boolean }): void {
+  private handleActionChanged(data?: { action: Actions; isInterruptible: boolean }): void {
     if (!data) return;
-    
+
     console.log(`Player animation changed to: ${data.action}`);
     this.currentAnimation = data.action;
     this.updateAnimation();
@@ -90,7 +92,7 @@ class PlayerAnimationController {
 
   private handleDirectionChanged(data?: { direction: string }): void {
     if (!data) return;
-    
+
     console.log(`Player direction changed to: ${data.direction}`);
     // Update animation direction
     this.updateAnimation();
@@ -102,7 +104,7 @@ class PlayerAnimationController {
   }
 
   public cleanup(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 }
 
@@ -120,7 +122,7 @@ class SoundEffectsController {
     this.subscriptions.push(
       this.eventBus.on(GameEvents.PLAYER.COLLISION, this.handleCollision.bind(this))
     );
-    
+
     this.subscriptions.push(
       this.eventBus.on(GameEvents.PLAYER.ACTION_CHANGED, this.handleActionChanged.bind(this))
     );
@@ -128,14 +130,14 @@ class SoundEffectsController {
 
   private handleCollision(data?: { direction: string }): void {
     if (!data) return;
-    
+
     console.log(`Playing collision sound for direction: ${data.direction}`);
     // Play collision sound effect
   }
 
   private handleActionChanged(data?: { action: Actions }): void {
     if (!data) return;
-    
+
     // Only play sounds for certain actions
     switch (data.action) {
       case Actions.MINING:
@@ -154,7 +156,7 @@ class SoundEffectsController {
   }
 
   public cleanup(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 }
 
@@ -181,4 +183,4 @@ export class GameEventsExample {
     this.playerAnimations.cleanup();
     this.soundEffects.cleanup();
   }
-} 
+}
