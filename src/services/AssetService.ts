@@ -311,8 +311,8 @@ export class AssetService implements IAssetService {
   }
 
   /**
-   * Gets the event history
-   * @returns Array of event history entries
+   * Gets the event history log
+   * @returns Array of event entries
    */
   getEventHistory(): Array<{ event: string; data: any; timestamp: number }> {
     return [...this.eventLog];
@@ -430,11 +430,19 @@ export class AssetService implements IAssetService {
   }
 
   /**
-   * Load a single asset
-   * @param key Asset key
+   * Loads an asset
+   * @param key Asset key to load
    * @returns Promise that resolves with the loaded asset
+   * @throws Error if asset is not registered
    */
-  loadAsset(key: string): Promise<any> {
+  loadAsset(
+    key: string
+  ): Promise<
+    | Phaser.GameObjects.GameObject
+    | Phaser.Loader.FileTypes.AudioFile
+    | Phaser.Textures.Texture
+    | object
+  > {
     // Validate key
     if (!key || typeof key !== 'string') {
       return Promise.reject(new Error('Asset key must be a non-empty string'));
@@ -457,7 +465,12 @@ export class AssetService implements IAssetService {
     }
 
     // Create asset loading promise
-    const loadPromise = new Promise<any>((resolve, reject) => {
+    const loadPromise = new Promise<
+      | Phaser.GameObjects.GameObject
+      | Phaser.Loader.FileTypes.AudioFile
+      | Phaser.Textures.Texture
+      | object
+    >((resolve, reject) => {
       // Update asset state
       this.emitEvent('asset.state.changed', {
         key,
@@ -680,15 +693,21 @@ export class AssetService implements IAssetService {
   }
 
   /**
-   * Gets a loaded asset by key
+   * Gets an asset by key and handles tracking and error states
    * @param key Asset key
-   * @returns The loaded asset
+   * @returns The asset
    * @private
    */
-  private getAssetByKey(key: string): any {
+  private getAssetByKey(
+    key: string
+  ):
+    | Phaser.GameObjects.GameObject
+    | Phaser.Loader.FileTypes.AudioFile
+    | Phaser.Textures.Texture
+    | object {
     const assetInfo = this.assets.get(key);
     if (!assetInfo || !assetInfo.loaded) {
-      throw new Error(`Asset with key "${key}" is not loaded`);
+      throw new Error(`Asset "${key}" is not loaded`);
     }
 
     // Update last used timestamp
@@ -782,9 +801,10 @@ export class AssetService implements IAssetService {
   /**
    * Gets a JSON asset
    * @param key Asset key
-   * @returns JSON data
+   * @returns The JSON object
+   * @throws Error if asset is not loaded or is not a JSON asset
    */
-  getJSON(key: string): any {
+  getJSON(key: string): object {
     const assetInfo = this.assets.get(key);
 
     if (!assetInfo) {
@@ -963,19 +983,194 @@ export class AssetService implements IAssetService {
 
   /**
    * Releases an asset from memory
-   * @param _key Asset key
+   * @param key Asset key
    * @returns True if the asset was released
    */
-  releaseAsset(_key: string): boolean {
-    throw new Error('Method not implemented.');
+  releaseAsset(key: string): boolean {
+    // Validate key
+    if (!key || typeof key !== 'string') {
+      console.error('[AssetService] Invalid asset key provided for release');
+      return false;
+    }
+
+    // Check if asset exists in registry
+    const assetInfo = this.assets.get(key);
+    if (!assetInfo) {
+      console.warn(`[AssetService] Cannot release asset "${key}": Asset is not registered`);
+      return false;
+    }
+
+    // Check if asset is loaded
+    if (!assetInfo.loaded) {
+      console.warn(`[AssetService] Cannot release asset "${key}": Asset is not loaded`);
+      return false;
+    }
+
+    // If asset is currently loading, wait for it to finish
+    if (this.loadingPromises.has(key)) {
+      console.warn(`[AssetService] Cannot release asset "${key}": Asset is currently loading`);
+      return false;
+    }
+
+    try {
+      // Release asset based on type
+      switch (assetInfo.type) {
+        case AssetType.IMAGE:
+        case AssetType.SPRITE_SHEET:
+        case AssetType.ATLAS:
+          if (this.scene.textures.exists(key)) {
+            this.scene.textures.remove(key);
+          }
+          break;
+
+        case AssetType.AUDIO: {
+          const sound = this.scene.sound.get(key);
+          if (sound) {
+            sound.destroy();
+          }
+          break;
+        }
+
+        case AssetType.VIDEO: {
+          const video = this.scene.cache.video.get(key);
+          if (video) {
+            video.remove();
+          }
+          break;
+        }
+
+        case AssetType.BITMAP_FONT:
+          if (this.scene.cache.bitmapFont.has(key)) {
+            this.scene.cache.bitmapFont.remove(key);
+          }
+          break;
+
+        case AssetType.JSON:
+          if (this.scene.cache.json.has(key)) {
+            this.scene.cache.json.remove(key);
+          }
+          break;
+
+        case AssetType.TILEMAP:
+          if (this.scene.cache.tilemap.has(key)) {
+            this.scene.cache.tilemap.remove(key);
+          }
+          break;
+
+        case AssetType.HTML:
+          if (this.scene.cache.html.has(key)) {
+            this.scene.cache.html.remove(key);
+          }
+          break;
+
+        case AssetType.SHADER:
+          if (this.scene.cache.shader.has(key)) {
+            this.scene.cache.shader.remove(key);
+          }
+          break;
+
+        default:
+          console.warn(`[AssetService] Unsupported asset type for release: ${assetInfo.type}`);
+          return false;
+      }
+
+      // Update asset info
+      assetInfo.loaded = false;
+      delete assetInfo.loadTime;
+      delete assetInfo.lastUsed;
+
+      // Emit release event
+      this.emitEvent('asset.state.changed', {
+        key,
+        previousState: 'loaded',
+        newState: 'registered',
+      });
+
+      // Also emit specific release event
+      this.emitEvent('asset.released', {
+        key,
+        type: assetInfo.type,
+        timestamp: Date.now(),
+      });
+
+      if (this.config.enableLogging) {
+        console.log(`[AssetService] Released asset from memory: ${key}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error(`[AssetService] Error releasing asset "${key}":`, error);
+      return false;
+    }
   }
 
   /**
    * Clears assets from memory
-   * @param _keys Optional array of asset keys to clear
+   * @param keys Optional array of asset keys to clear. If not provided, all loaded assets will be cleared.
    */
-  clearAssets(_keys?: string[]): void {
-    throw new Error('Method not implemented.');
+  clearAssets(keys?: string[]): void {
+    const assetsToRelease: string[] = [];
+
+    // If keys are provided, use them; otherwise, use all loaded assets
+    if (keys && Array.isArray(keys)) {
+      assetsToRelease.push(...keys);
+    } else {
+      // Get all loaded assets
+      this.assets.forEach((asset, key) => {
+        if (asset.loaded) {
+          assetsToRelease.push(key);
+        }
+      });
+    }
+
+    if (assetsToRelease.length === 0) {
+      if (this.config.enableLogging) {
+        console.log('[AssetService] No assets to clear');
+      }
+      return;
+    }
+
+    const releasedAssets: string[] = [];
+    let freedMemoryEstimate = 0;
+
+    // Release each asset
+    for (const key of assetsToRelease) {
+      const assetInfo = this.assets.get(key);
+
+      // Skip assets with PERSISTENT cache policy unless they were explicitly requested
+      if (!keys && assetInfo?.cachePolicy === CachePolicy.PERSISTENT) {
+        continue;
+      }
+
+      // Get estimated memory before releasing
+      if (assetInfo && assetInfo.loaded) {
+        // This is a rough estimate, as we don't have exact memory usage yet
+        // Will be replaced with actual memory tracking in getMemoryUsage implementation
+        freedMemoryEstimate += 1; // 1MB placeholder, will be more accurate when memory tracking is implemented
+      }
+
+      // Release the asset
+      if (this.releaseAsset(key)) {
+        releasedAssets.push(key);
+      }
+    }
+
+    // Emit memory released event
+    if (releasedAssets.length > 0) {
+      this.emitEvent('asset.memory.released', {
+        freedMemory: freedMemoryEstimate,
+        releasedAssets,
+        trigger: 'manual',
+      });
+
+      if (this.config.enableLogging) {
+        console.log(
+          `[AssetService] Cleared ${releasedAssets.length} assets from memory: ${releasedAssets.join(
+            ', '
+          )}`
+        );
+      }
+    }
   }
 
   /**
@@ -983,7 +1178,155 @@ export class AssetService implements IAssetService {
    * @returns Memory usage data
    */
   getMemoryUsage(): MemoryUsageData {
-    throw new Error('Method not implemented.');
+    // Calculate memory usage for each asset
+    const memoryByAsset = new Map<string, number>();
+    let totalMemory = 0;
+
+    // Track memory by asset type
+    const memoryByType: Record<AssetType, number> = Object.values(AssetType).reduce(
+      (acc, type) => {
+        acc[type] = 0;
+        return acc;
+      },
+      {} as Record<AssetType, number>
+    );
+
+    // Calculate memory usage for each loaded asset
+    this.assets.forEach((asset, key) => {
+      if (!asset.loaded) return;
+
+      // Estimate memory usage based on asset type
+      let estimatedMemory = 0;
+
+      try {
+        switch (asset.type) {
+          case AssetType.IMAGE:
+          case AssetType.SPRITE_SHEET:
+          case AssetType.ATLAS:
+            // Get texture and estimate memory usage
+            if (this.scene.textures.exists(key)) {
+              const texture = this.scene.textures.get(key);
+              const frame = texture.get();
+
+              if (frame) {
+                // Calculate approximate memory usage: width * height * 4 bytes (RGBA)
+                estimatedMemory = (frame.width * frame.height * 4) / (1024 * 1024); // Convert to MB
+              }
+            }
+            break;
+
+          case AssetType.AUDIO:
+            // Audio estimation is more complex and depends on format, duration, etc.
+            // For now, use a conservative estimate based on typical audio file sizes
+            estimatedMemory = 1; // Assume 1MB per audio file
+            break;
+
+          case AssetType.VIDEO:
+            // Video estimation is also complex
+            // For now, use a conservative estimate
+            estimatedMemory = 5; // Assume 5MB per video
+            break;
+
+          case AssetType.JSON:
+            // For JSON, estimate based on stringified size
+            try {
+              const json = this.scene.cache.json.get(key);
+              const jsonString = JSON.stringify(json);
+              estimatedMemory = jsonString.length / (1024 * 1024); // Convert bytes to MB
+            } catch (e) {
+              estimatedMemory = 0.1; // Fallback to 0.1MB if we can't stringify
+            }
+            break;
+
+          case AssetType.BITMAP_FONT:
+            // Bitmap fonts are typically smaller than full textures
+            estimatedMemory = 0.5; // Assume 0.5MB per bitmap font
+            break;
+
+          case AssetType.TILEMAP:
+            // Tilemaps can vary greatly in size
+            estimatedMemory = 1; // Assume 1MB per tilemap
+            break;
+
+          case AssetType.HTML:
+            // HTML is typically small
+            estimatedMemory = 0.1; // Assume 0.1MB per HTML asset
+            break;
+
+          case AssetType.SHADER:
+            // Shaders are very small
+            estimatedMemory = 0.05; // Assume 0.05MB per shader
+            break;
+
+          default:
+            estimatedMemory = 0.1; // Default to 0.1MB for unknown types
+        }
+      } catch (error) {
+        console.warn(`[AssetService] Error estimating memory for asset "${key}":`, error);
+        estimatedMemory = 0.1; // Default fallback
+      }
+
+      // Store memory usage
+      memoryByAsset.set(key, estimatedMemory);
+      memoryByType[asset.type] += estimatedMemory;
+      totalMemory += estimatedMemory;
+
+      // Update tracking
+      this.memoryUsage[asset.type] = memoryByType[asset.type];
+    });
+
+    // Find largest assets for reporting
+    const assetEntries = Array.from(memoryByAsset.entries());
+    assetEntries.sort((a, b) => b[1] - a[1]); // Sort by size, descending
+
+    const largestAssets = assetEntries.slice(0, 10).map(([key, size]) => {
+      const asset = this.assets.get(key)!;
+      return {
+        key,
+        size,
+        type: asset.type,
+      };
+    });
+
+    // Create memory usage data
+    const memoryData: MemoryUsageData = {
+      total: totalMemory,
+      byType: memoryByType,
+      largestAssets,
+    };
+
+    // Store additional data locally for potential future use but don't include in return type
+    const timestamp = Date.now();
+
+    // Emit memory usage event
+    this.emitEvent('asset.memory.usage', {
+      total: totalMemory,
+      byType: memoryByType,
+      largestAssets,
+      timestamp, // This is fine for the event since IMemoryUsage has timestamp
+    });
+
+    // Check for memory thresholds and emit warnings
+    if (totalMemory >= this.config.memoryCriticalThreshold) {
+      this.emitEvent('asset.memory.critical', {
+        currentUsage: totalMemory,
+        threshold: this.config.memoryCriticalThreshold,
+        requiredAction: 'Release assets immediately or risk application crash',
+      });
+
+      // Automatically prune if configured to do so
+      if (this.config.autoPruneCache) {
+        this.pruneCache(this.config.memoryCriticalThreshold * 0.7); // Aim to reduce to 70% of critical threshold
+      }
+    } else if (totalMemory >= this.config.memoryWarningThreshold) {
+      this.emitEvent('asset.memory.warning', {
+        currentUsage: totalMemory,
+        threshold: this.config.memoryWarningThreshold,
+        recommendedAction: 'Consider releasing unused assets',
+      });
+    }
+
+    return memoryData;
   }
 
   /**
@@ -991,7 +1334,8 @@ export class AssetService implements IAssetService {
    * @returns Total memory in MB
    */
   getTotalMemoryUsed(): number {
-    throw new Error('Method not implemented.');
+    // We can use getMemoryUsage but just return the total
+    return this.getMemoryUsage().total;
   }
 
   /**
@@ -999,39 +1343,199 @@ export class AssetService implements IAssetService {
    * @returns Record of memory usage by type
    */
   getMemoryUsageByType(): Record<AssetType, number> {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Prunes the asset cache
-   * @param _targetSize Target cache size in MB
-   * @returns Cache pruning result data
-   */
-  pruneCache(_targetSize?: number): CachePrunedData {
-    throw new Error('Method not implemented.');
+    // We can use getMemoryUsage but just return the byType property
+    return this.getMemoryUsage().byType;
   }
 
   /**
    * Sets memory thresholds for warning and critical events
-   * @param _warning Warning threshold in MB
-   * @param _critical Critical threshold in MB
+   * @param warning Warning threshold in MB
+   * @param critical Critical threshold in MB
    */
-  setMemoryThresholds(_warning: number, _critical: number): void {
-    throw new Error('Method not implemented.');
+  setMemoryThresholds(warning: number, critical: number): void {
+    if (typeof warning !== 'number' || warning <= 0) {
+      throw new Error('Warning threshold must be a positive number');
+    }
+
+    if (typeof critical !== 'number' || critical <= 0) {
+      throw new Error('Critical threshold must be a positive number');
+    }
+
+    if (warning >= critical) {
+      throw new Error('Warning threshold must be less than critical threshold');
+    }
+
+    // Update config
+    this.config.memoryWarningThreshold = warning;
+    this.config.memoryCriticalThreshold = critical;
+
+    if (this.config.enableLogging) {
+      console.log(
+        `[AssetService] Memory thresholds updated: Warning=${warning}MB, Critical=${critical}MB`
+      );
+    }
+  }
+
+  /**
+   * Prunes the asset cache
+   * @param targetSize Target cache size in MB, defaults to 80% of warning threshold
+   * @returns Cache pruning result data
+   */
+  pruneCache(targetSize?: number): CachePrunedData {
+    // Get current memory usage
+    const memoryData = this.getMemoryUsage();
+    const currentMemory = memoryData.total;
+
+    // If no target size provided, use 80% of warning threshold
+    const targetMemory = targetSize || this.config.memoryWarningThreshold * 0.8;
+
+    // If we're already below the target, no need to prune
+    if (currentMemory <= targetMemory) {
+      if (this.config.enableLogging) {
+        console.log(
+          `[AssetService] No need to prune cache: ${currentMemory.toFixed(2)}MB used, target is ${targetMemory.toFixed(2)}MB`
+        );
+      }
+
+      return {
+        removedCount: 0,
+        freedMemory: 0,
+        removedAssets: [],
+      };
+    }
+
+    // Calculate how much memory we need to free
+    const memoryToFree = currentMemory - targetMemory;
+
+    // Get all loaded assets with their memory usage and sort them based on the selected strategy
+    const assetEntries: Array<{ key: string; memory: number; lastUsed: number; priority: number }> =
+      [];
+
+    this.assets.forEach((asset, key) => {
+      if (!asset.loaded || asset.cachePolicy === CachePolicy.PERSISTENT) {
+        return; // Skip unloaded assets and persistent assets
+      }
+
+      // Get estimated memory for this asset (simplified version)
+      const memory =
+        memoryData.byType[asset.type] /
+        Array.from(this.assets.values()).filter((a) => a.loaded && a.type === asset.type).length;
+
+      // Calculate priority based on asset type
+      const priorityIndex = this.config.priorityAssetTypes.indexOf(asset.type);
+      const priority = priorityIndex >= 0 ? priorityIndex : this.config.priorityAssetTypes.length;
+
+      assetEntries.push({
+        key,
+        memory,
+        lastUsed: asset.lastUsed || 0,
+        priority,
+      });
+    });
+
+    // Sort assets based on the selected strategy
+    switch (this.config.cachePruneStrategy) {
+      case 'LRU':
+        // Sort by last used time (oldest first)
+        assetEntries.sort((a, b) => a.lastUsed - b.lastUsed);
+        break;
+
+      case 'SIZE':
+        // Sort by memory usage (largest first)
+        assetEntries.sort((a, b) => b.memory - a.memory);
+        break;
+
+      case 'HYBRID':
+        // Combined approach considering last used time, size, and priority
+        assetEntries.sort((a, b) => {
+          // Calculate a score based on all factors
+          const timeFactorA = (Date.now() - a.lastUsed) / 3600000; // Hours since last use
+          const timeFactorB = (Date.now() - b.lastUsed) / 3600000;
+
+          const scoreA = timeFactorA * 0.6 + a.memory * 0.3 - a.priority * 0.1;
+          const scoreB = timeFactorB * 0.6 + b.memory * 0.3 - b.priority * 0.1;
+
+          return scoreB - scoreA; // Higher score gets removed first
+        });
+        break;
+    }
+
+    // Release assets until we've freed enough memory
+    const releasedAssets: string[] = [];
+    let freedMemory = 0;
+
+    for (const entry of assetEntries) {
+      if (freedMemory >= memoryToFree) {
+        // We've freed enough memory
+        break;
+      }
+
+      // Release this asset
+      if (this.releaseAsset(entry.key)) {
+        releasedAssets.push(entry.key);
+        freedMemory += entry.memory;
+      }
+    }
+
+    // Create result data
+    const pruneData: CachePrunedData = {
+      removedCount: releasedAssets.length,
+      freedMemory,
+      removedAssets: releasedAssets,
+    };
+
+    // Emit pruning event
+    this.emitEvent('asset.cache.pruned', pruneData);
+
+    if (this.config.enableLogging) {
+      console.log(
+        `[AssetService] Pruned cache: Removed ${releasedAssets.length} assets, freed ${freedMemory.toFixed(2)}MB: ${releasedAssets.join(', ')}`
+      );
+    }
+
+    return pruneData;
   }
 
   /**
    * Enables memory monitoring
    * @param interval Monitoring interval in ms
    */
-  enableMemoryMonitoring(_interval?: number): void {
+  enableMemoryMonitoring(interval?: number): void {
     if (this.memoryMonitorInterval !== null) {
       this.disableMemoryMonitoring();
     }
 
-    // For now, just set the interval variable without actual monitoring
-    // This will be implemented in a later phase
-    this.memoryMonitorInterval = 1; // Placeholder value
+    // Set default interval if not provided
+    const monitoringInterval = interval || this.config.memoryMonitoringInterval;
+
+    // Use browser setInterval to periodically check memory usage
+    // We'll store the ID as a number rather than NodeJS.Timeout for type compatibility
+    this.memoryMonitorInterval = window.setInterval(() => {
+      // Get current memory usage
+      const memoryData = this.getMemoryUsage();
+
+      // Memory warning/critical events are already handled in getMemoryUsage()
+
+      if (this.config.enableLogging) {
+        console.log(`[AssetService] Memory monitoring: ${memoryData.total.toFixed(2)}MB used`);
+      }
+
+      // If auto-pruning is enabled and we're approaching the warning threshold (80%)
+      if (
+        this.config.autoPruneCache &&
+        memoryData.total > this.config.memoryWarningThreshold * 0.8 &&
+        memoryData.total < this.config.memoryWarningThreshold
+      ) {
+        // Preemptively prune to avoid hitting the warning threshold
+        this.pruneCache(this.config.memoryWarningThreshold * 0.7);
+      }
+    }, monitoringInterval) as unknown as number;
+
+    if (this.config.enableLogging) {
+      console.log(
+        `[AssetService] Memory monitoring enabled with interval: ${monitoringInterval}ms`
+      );
+    }
   }
 
   /**
@@ -1039,7 +1543,12 @@ export class AssetService implements IAssetService {
    */
   disableMemoryMonitoring(): void {
     if (this.memoryMonitorInterval !== null) {
+      window.clearInterval(this.memoryMonitorInterval);
       this.memoryMonitorInterval = null;
+
+      if (this.config.enableLogging) {
+        console.log('[AssetService] Memory monitoring disabled');
+      }
     }
   }
 

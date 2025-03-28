@@ -135,6 +135,7 @@ export interface AssetEventMap {
   'asset.memory.usage': IMemoryUsage;
   'asset.cache.full': ICacheFull;
   'asset.cache.pruned': ICachePruned;
+  'asset.released': ILoadStarted;
 }
 
 /**
@@ -148,13 +149,20 @@ export interface IAssetService {
 
   // Asset loading
   preload(keys: string[], onProgress?: (progress: number) => void): Promise<void>;
-  loadAsset(key: string): Promise<any>;
+  loadAsset(
+    key: string
+  ): Promise<
+    | Phaser.GameObjects.GameObject
+    | Phaser.Loader.FileTypes.AudioFile
+    | Phaser.Textures.Texture
+    | object
+  >;
   isLoaded(key: string): boolean;
 
   // Asset retrieval
   getTexture(key: string): Phaser.Textures.Texture;
   getAudio(key: string): Phaser.Sound.BaseSound;
-  getJSON(key: string): any;
+  getJSON(key: string): object;
   getAtlas(key: string): Phaser.Textures.Texture;
   getBitmapFont(key: string): Phaser.GameObjects.BitmapText;
 
