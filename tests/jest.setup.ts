@@ -14,6 +14,58 @@
 
 import { jest, expect } from '@jest/globals';
 
+// Define custom matchers
+const customMatchers = {
+  toBeInGameBounds(received: { x: number; y: number }, bounds: { width: number; height: number }) {
+    const pass = received.x >= 0 && received.x <= bounds.width && 
+                received.y >= 0 && received.y <= bounds.height;
+    return {
+      message: () => `expected position (${received.x}, ${received.y}) ${pass ? 'not ' : ''}to be within game bounds ${JSON.stringify(bounds)}`,
+      pass
+    };
+  },
+
+  toHaveBeenCalledWithGameObject(received: jest.Mock, gameObjectType: string) {
+    const calls = received.mock.calls;
+    const pass = calls.some(call => {
+      const arg = call[0];
+      return arg && typeof arg === 'object' && 'type' in arg && arg.type === gameObjectType;
+    });
+    return {
+      message: () => `expected ${received.getMockName()} ${pass ? 'not ' : ''}to have been called with a ${gameObjectType} game object`,
+      pass
+    };
+  },
+
+  toBeValidGameState(received: unknown) {
+    const isValidGameState = (state: unknown): boolean => {
+      if (!state || typeof state !== 'object') return false;
+      const requiredProps = ['scene', 'status', 'timestamp'];
+      return requiredProps.every(prop => prop in state);
+    };
+    const pass = isValidGameState(received);
+    return {
+      message: () => `expected ${JSON.stringify(received)} ${pass ? 'not ' : ''}to be a valid game state`,
+      pass
+    };
+  },
+
+  toHaveValidPhysicsBody(received: unknown) {
+    const isValidPhysicsBody = (obj: unknown): boolean => {
+      if (!obj || typeof obj !== 'object') return false;
+      const requiredProps = ['velocity', 'acceleration', 'position'];
+      return requiredProps.every(prop => prop in obj);
+    };
+    const pass = isValidPhysicsBody(received);
+    return {
+      message: () => `expected ${JSON.stringify(received)} ${pass ? 'not ' : ''}to have a valid physics body`,
+      pass
+    };
+  }
+};
+
+expect.extend(customMatchers);
+
 /**
  * Canvas context mock interface for 2D rendering context.
  * Provides mock implementations of essential canvas operations used by Phaser.
@@ -202,61 +254,6 @@ const setupMockBrowserEnvironment = (): void => {
 
 // Initialize mock environment
 setupMockBrowserEnvironment();
-
-/**
- * Custom matchers for game testing.
- * Extends Jest's expect with game-specific assertions.
- * 
- * @see {@link docs/testing/helpers/test-utils.md} - Test utility documentation
- */
-expect.extend({
-  toBeInGameBounds(received: { x: number; y: number }, bounds: { width: number; height: number }) {
-    const pass = received.x >= 0 && received.x <= bounds.width && 
-                received.y >= 0 && received.y <= bounds.height;
-    return {
-      message: () => `expected position (${received.x}, ${received.y}) ${pass ? 'not ' : ''}to be within game bounds ${JSON.stringify(bounds)}`,
-      pass
-    };
-  },
-
-  toHaveBeenCalledWithGameObject(received: jest.Mock, gameObjectType: string) {
-    const calls = received.mock.calls;
-    const pass = calls.some(call => {
-      const arg = call[0];
-      return arg && typeof arg === 'object' && 'type' in arg && arg.type === gameObjectType;
-    });
-    return {
-      message: () => `expected ${received.getMockName()} ${pass ? 'not ' : ''}to have been called with a ${gameObjectType} game object`,
-      pass
-    };
-  },
-
-  toBeValidGameState(received: unknown) {
-    const isValidGameState = (state: unknown): boolean => {
-      if (!state || typeof state !== 'object') return false;
-      const requiredProps = ['scene', 'status', 'timestamp'];
-      return requiredProps.every(prop => prop in state);
-    };
-    const pass = isValidGameState(received);
-    return {
-      message: () => `expected ${JSON.stringify(received)} ${pass ? 'not ' : ''}to be a valid game state`,
-      pass
-    };
-  },
-
-  toHaveValidPhysicsBody(received: unknown) {
-    const isValidPhysicsBody = (obj: unknown): boolean => {
-      if (!obj || typeof obj !== 'object') return false;
-      const requiredProps = ['velocity', 'acceleration', 'position'];
-      return requiredProps.every(prop => prop in obj);
-    };
-    const pass = isValidPhysicsBody(received);
-    return {
-      message: () => `expected ${JSON.stringify(received)} ${pass ? 'not ' : ''}to have a valid physics body`,
-      pass
-    };
-  }
-});
 
 /**
  * Global test utilities for creating test objects.
