@@ -2,16 +2,18 @@
  * Tests for MainScene
  * 
  * @file MainScene.test.ts
+ * @module tests/unit/scenes
  * @group unit
  * @group scenes
  * @coverage-target 90%
  * @description Tests the main game scene functionality including click handling, text display, and scene transitions
  * 
+ * @see {@link docs/testing/jest-configuration-troubleshooting.md} Jest configuration and common troubleshooting patterns
+ * @see {@link tests/jest.setup.ts} Test environment configuration
  * @see {@link docs/testing/unit/scenes.md} Scene testing guidelines and patterns
  * @see {@link docs/testing/helpers/scene-test-bed.md} Scene testing utilities
  * @see {@link docs/testing/mocking/mock-vs-helpers.md} Mocking strategy guidelines
  * @see {@link docs/testing/jest-testing-strategy.md} Overall testing approach
- * @see {@link tests/jest.setup.ts} Test environment configuration
  */
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 
@@ -20,11 +22,21 @@ jest.mock('phaser');
 
 import { MainScene } from '../../../src/scenes/MainScene';
 
+/**
+ * Interface representing a mock game object with required test methods
+ * @interface MockGameObject
+ */
 interface MockGameObject {
+  /** Mock function for setting the origin of the game object */
   setOrigin: jest.Mock;
+  /** Optional mock function for setting text content */
   setText?: jest.Mock;
 }
 
+/**
+ * Type extending MainScene with additional test-specific properties
+ * @typedef {MainScene & { _countText?: MockGameObject; hot: { data?: { clickCount: number } } }} MockScene
+ */
 type MockScene = MainScene & {
   _countText?: MockGameObject;
   hot: { data?: { clickCount: number } };
@@ -33,7 +45,8 @@ type MockScene = MainScene & {
 /**
  * Test suite for MainScene functionality
  * 
- * Tests core scene functionality including:
+ * @namespace MainSceneTests
+ * @description Tests core scene functionality including:
  * 1. Scene initialization and setup
  * 2. UI element creation and positioning
  * 3. Input handling (clicks and keyboard)
@@ -41,8 +54,13 @@ type MockScene = MainScene & {
  * 5. State persistence
  */
 describe('MainScene', () => {
+  /** @type {MockScene} The scene instance used for testing */
   let scene: MockScene;
 
+  /**
+   * Set up test environment before each test
+   * @memberof MainSceneTests
+   */
   beforeEach(() => {
     scene = new MainScene() as MockScene;
     
@@ -52,22 +70,29 @@ describe('MainScene', () => {
       setText: jest.fn().mockReturnThis(),
     };
 
+    // Set up scene key properly
+    scene.scene = {
+      key: 'MainScene',
+      start: jest.fn(),
+    } as any;
+
+    // Mock Phaser systems more completely
     scene.add = {
       image: jest.fn().mockReturnValue({
         setOrigin: jest.fn().mockReturnThis(),
       }),
       text: jest.fn().mockReturnValue(mockText),
+      sprite: jest.fn().mockReturnValue({
+        setOrigin: jest.fn().mockReturnThis(),
+      }),
     } as any;
 
     scene.input = {
       on: jest.fn(),
       keyboard: {
         on: jest.fn(),
+        addKey: jest.fn(),
       },
-    } as any;
-
-    scene.scene = {
-      start: jest.fn(),
     } as any;
 
     scene.cameras = {
@@ -81,6 +106,10 @@ describe('MainScene', () => {
     scene._countText = mockText;
   });
 
+  /**
+   * Clean up after each test
+   * @memberof MainSceneTests
+   */
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -88,7 +117,8 @@ describe('MainScene', () => {
   /**
    * Tests for scene creation and setup
    * 
-   * Verifies:
+   * @namespace MainSceneTests.create
+   * @description Verifies:
    * - Background image setup
    * - Text element creation and positioning
    * - Input handler registration
@@ -96,7 +126,8 @@ describe('MainScene', () => {
    */
   describe('create', () => {
     /**
-     * Tests the initial scene setup including background, text elements, and input handlers
+     * Tests the initial scene setup
+     * @memberof MainSceneTests.create
      */
     it('should set up the scene correctly', () => {
       scene.create();
@@ -261,17 +292,11 @@ describe('MainScene', () => {
   });
 
   it('should create game objects in create method', () => {
-    // Mock scene methods
-    scene.add = {
-      image: jest.fn().mockReturnValue(createTestGameObject('image')),
-      sprite: jest.fn().mockReturnValue(createTestGameObject('sprite'))
-    } as any;
-
     // Call create method
     scene.create();
 
     // Verify game objects were created
     expect(scene.add.image).toHaveBeenCalled();
-    expect(scene.add.sprite).toHaveBeenCalled();
+    expect(scene.add.text).toHaveBeenCalledTimes(3); // Hello World, counter, and instructions
   });
 }); 

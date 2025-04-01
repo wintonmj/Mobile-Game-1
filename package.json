@@ -19,7 +19,7 @@
         "test:integration": "npm run test -- tests/integration",
         "test:performance": "npm run test -- tests/performance",
         "test:visual": "npm run test -- tests/visual",
-        "check": "npm run lint && npm run test && npm run build"
+        "check": "npm run format && npm run lint && npm run test:coverage && npm run build"
     },
     "dependencies": {
         "http-server": "^14.1.1",
@@ -30,8 +30,9 @@
         "@commitlint/config-conventional": "^19.8.0",
         "@types/jest": "^29.5.12",
         "@types/mock-fs": "^4.13.4",
-        "@typescript-eslint/eslint-plugin": "^7.2.0",
-        "@typescript-eslint/parser": "^7.2.0",
+        "@typescript-eslint/eslint-plugin": "^8.29.0",
+        "@typescript-eslint/parser": "^8.29.0",
+        "@typescript-eslint/typescript-estree": "^8.29.0",
         "@vitejs/plugin-legacy": "^6.0.2",
         "cors": "^2.8.5",
         "eslint": "^8.57.0",
