@@ -1,3 +1,23 @@
 #!/usr/bin/env sh
 
-npm run test
+# Run full test suite with coverage
+echo "🧪 Running tests with coverage..."
+npm run test:coverage || exit 1
+
+# Run build to ensure everything compiles
+echo "🏗️  Running full build..."
+npm run build || exit 1
+
+# Check for outdated dependencies
+echo "📦 Checking for outdated dependencies..."
+npm outdated || true  # Don't fail on outdated deps, just inform
+
+# Validate branch name
+echo "🌿 Validating branch name..."
+branch="$(git rev-parse --abbrev-ref HEAD)"
+if ! echo "$branch" | grep -E "^(feature|bugfix|hotfix|release)/[A-Z]+-[0-9]+-.+$" > /dev/null; then
+  if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
+    echo "Error: Branch name '$branch' does not follow convention: (feature|bugfix|hotfix|release)/JIRA-123-description"
+    exit 1
+  fi
+fi

@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+# Validate commit message
+echo "🔍 Validating commit message..."
+npx --no -- commitlint --edit "$1"

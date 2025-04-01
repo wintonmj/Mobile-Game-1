@@ -1,3 +1,27 @@
 #!/usr/bin/env sh
 
-npm run lint && npm run format
+# Check TypeScript types
+echo "🔍 Checking TypeScript types..."
+npm run build || exit 1
+
+# Run linting and formatting
+echo "🧹 Running linting and formatting..."
+npm run lint || exit 1
+npm run format || exit 1
+
+# Check for large files (>500KB)
+echo "📏 Checking for large files..."
+find . -type f -size +500k ! -path "./node_modules/*" ! -path "./.git/*" ! -path "./dist/*" ! -path "./coverage/*" -exec sh -c '
+  echo "Warning: Large file detected: {}"
+  read -p "Do you want to continue? (y/N) " choice
+  if [ "$choice" != "y" ]; then
+    exit 1
+  fi
+' sh {} \;
+
+# Check if package-lock.json is in sync
+echo "📦 Checking package-lock.json..."
+if ! git diff --quiet package-lock.json; then
+  echo "Error: package-lock.json is out of sync. Please run npm install and commit the changes."
+  exit 1
+fi
