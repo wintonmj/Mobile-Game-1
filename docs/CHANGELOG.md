@@ -24,12 +24,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive Phaser.js mocking utilities for testing
 - Test helper utilities including scene-test-bed
 - Detailed mocking documentation and setup guides
+- New test utilities for common testing patterns
+- Dedicated config directory for better organization
 
 ### Changed
 - Restructured documentation according to DocumentationPlan.md
 - Reorganized project structure for better maintainability
 - Enhanced testing infrastructure with improved mock factories
 - Updated project structure documentation for testing
+- Moved all configuration files to dedicated config/ directory
+- Converted Phaser mock from JavaScript to TypeScript
+- Reorganized scripts into dedicated scripts/ directory
+- Updated project dependencies and build scripts
+- Improved test setup and configuration
 
 ### Fixed
 - None
@@ -38,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None
 
 ### Removed
-- None
+- Redundant configuration files from root directory
+- Unused TODO file (moved to docs/TODO)
 
 ### Security
 - None
