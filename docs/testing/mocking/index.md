@@ -182,3 +182,12 @@ export const verifyMockCalls = (
 - [Test Helpers](../helpers/index.md)
 - [Integration Testing](../integration-testing/index.md)
 - [Jest Configuration](../jest-testing-strategy.md)
+
+## Contents
+
+1. [Mocking Strategies](./mocking-strategies.md)
+   - General Mocking Patterns
+   - Service Mocking
+   - Component Mocking
+   - Phaser-Specific Mocking Strategies
+   - Best Practices and Anti-Patterns

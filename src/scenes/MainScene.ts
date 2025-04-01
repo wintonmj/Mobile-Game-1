@@ -13,7 +13,7 @@ export class MainScene extends Phaser.Scene {
     this.add.image(0, 0, 'background').setOrigin(0, 0);
 
     // Add hello world text
-    const text = this.add.text(
+    this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY - 50,
       'Hello World!',
@@ -37,7 +37,7 @@ export class MainScene extends Phaser.Scene {
     ).setOrigin(0.5);
 
     // Add instruction text
-    const instruction = this.add.text(
+    this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY + 50,
       'Click to increment counter\nPress R to restart scene',
@@ -56,9 +56,12 @@ export class MainScene extends Phaser.Scene {
     });
 
     // Add key handler for scene restart
-    this.input.keyboard.on('keydown-R', () => {
-      this.scene.start('LoadingScene');
-    });
+    const keyboard = this.input.keyboard;
+    if (keyboard) {
+      keyboard.on('keydown-R', () => {
+        this.scene.start('LoadingScene');
+      });
+    }
   }
 
   // This method will be called by HMR when the module is hot reloaded
@@ -69,7 +72,7 @@ export class MainScene extends Phaser.Scene {
   };
 
   // Store state before HMR update
-  beforeDestroy() {
+  beforeDestroy(): void {
     if (this.hot) {
       this.hot.data = {
         clickCount: this.clickCount
@@ -78,7 +81,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   // Restore state after HMR update
-  init() {
+  init(): void {
     this.clickCount = this.hot?.data?.clickCount ?? this.clickCount;
   }
 } 

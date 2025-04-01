@@ -13,6 +13,7 @@ This document provides detailed mocking techniques and patterns for testing game
 - [Complex Dependency Chains](#complex-dependency-chains)
 - [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
 - [Debugging Mocks](#debugging-mocks)
+- [Phaser-Specific Mocking Strategies](#phaser-specific-mocking-strategies)
 
 ## Mocking Fundamentals
 
@@ -1090,3 +1091,261 @@ export function createMockEventBus(): jest.Mocked<IEventBus> {
   
   return mockEventBus;
 }
+
+## Phaser-Specific Mocking Strategies
+
+### Setting Up Phaser Mocks
+
+#### 1. Jest Configuration
+```javascript
+// jest.config.js
+export default {
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',  // Required for Phaser's browser APIs
+  setupFilesAfterEnv: ['./jest.setup.js'],
+  moduleNameMapper: {
+    '^phaser$': '<rootDir>/__mocks__/phaser.js'  // Map Phaser imports to our mock
+  },
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+      useESM: true  // Enable ES modules support
+    }]
+  },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  moduleDirectories: ['node_modules', 'src']
+};
+```
+
+#### 2. Browser Environment Setup
+```javascript
+// jest.setup.js
+import { jest } from '@jest/globals';
+
+const mock = () => {
+  const canvas = {
+    getContext: () => ({
+      fillRect: jest.fn(),
+      clearRect: jest.fn(),
+      getImageData: jest.fn(),
+      putImageData: jest.fn(),
+      createImageData: jest.fn(),
+      setTransform: jest.fn(),
+      drawImage: jest.fn(),
+      // ... other canvas context methods
+    }),
+    style: {},
+    width: 800,
+    height: 600,
+  };
+
+  // Mock browser globals
+  global.document = {
+    createElement: (tag) => tag === 'canvas' ? canvas : {},
+    documentElement: { style: {} },
+  };
+  
+  global.window = {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    devicePixelRatio: 1,
+    innerWidth: 800,
+    innerHeight: 600,
+    // ... other window properties
+  };
+  
+  global.Image = class {
+    constructor() {
+      setTimeout(() => this.onload?.());
+    }
+  };
+  
+  global.HTMLCanvasElement = class {};
+  global.ImageData = class {};
+};
+
+mock();
+```
+
+#### 3. Phaser Mock Implementation
+```javascript
+// __mocks__/phaser.js
+import { jest } from '@jest/globals';
+
+class Scene {
+  constructor(config) {
+    Object.assign(this, config);
+  }
+  
+  update() {}
+  create() {}
+  preload() {}
+  init() {}
+}
+
+const GameObjects = {
+  Sprite: jest.fn().mockImplementation(() => ({
+    setPosition: jest.fn().mockReturnThis(),
+    setOrigin: jest.fn().mockReturnThis(),
+    setScale: jest.fn().mockReturnThis(),
+    setDepth: jest.fn().mockReturnThis(),
+    setAlpha: jest.fn().mockReturnThis(),
+    setTint: jest.fn().mockReturnThis(),
+    play: jest.fn().mockReturnThis(),
+    on: jest.fn().mockReturnThis(),
+  })),
+  Image: jest.fn().mockImplementation(() => ({
+    setPosition: jest.fn().mockReturnThis(),
+    setOrigin: jest.fn().mockReturnThis(),
+    setScale: jest.fn().mockReturnThis(),
+    setDepth: jest.fn().mockReturnThis(),
+    setAlpha: jest.fn().mockReturnThis(),
+    setTint: jest.fn().mockReturnThis(),
+    on: jest.fn().mockReturnThis(),
+  })),
+  Text: jest.fn().mockImplementation(() => ({
+    setPosition: jest.fn().mockReturnThis(),
+    setOrigin: jest.fn().mockReturnThis(),
+    setStyle: jest.fn().mockReturnThis(),
+    setText: jest.fn().mockReturnThis(),
+    on: jest.fn().mockReturnThis(),
+  })),
+};
+
+// Export Phaser components
+export {
+  Scene,
+  Game: jest.fn().mockImplementation(() => ({ destroy: jest.fn() })),
+  GameObjects,
+  Physics: {
+    Arcade: {
+      Sprite: jest.fn(),
+      Group: jest.fn(),
+      Body: jest.fn()
+    }
+  },
+  Scale: {
+    NONE: 'NONE',
+    FIT: 'FIT',
+    RESIZE: 'RESIZE',
+  },
+  // ... other Phaser exports
+};
+```
+
+### Testing Phaser Scenes
+
+#### Scene Test Setup Pattern
+```typescript
+import { jest } from '@jest/globals';
+import { Scene } from 'phaser';
+
+describe('GameScene', () => {
+  let scene: GameScene;
+
+  beforeEach(() => {
+    scene = new GameScene();
+    
+    // Mock required scene properties
+    const mockText = {
+      setOrigin: jest.fn().mockReturnThis(),
+      setText: jest.fn().mockReturnThis(),
+    };
+
+    scene.add = {
+      image: jest.fn().mockReturnValue({
+        setOrigin: jest.fn().mockReturnThis(),
+      }),
+      text: jest.fn().mockReturnValue(mockText),
+    } as any;
+
+    scene.input = {
+      on: jest.fn(),
+      keyboard: {
+        on: jest.fn(),
+      },
+    } as any;
+
+    // Store references for assertions
+    (scene as any).gameText = mockText;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+});
+```
+
+#### Testing Scene Lifecycle Methods
+```typescript
+describe('Scene Lifecycle', () => {
+  it('should initialize correctly', () => {
+    scene.create();
+    
+    // Verify game objects were created
+    const addImage = scene.add.image as jest.Mock;
+    expect(addImage).toHaveBeenCalledWith(0, 0, 'background');
+    expect(addImage.mock.results[0].value.setOrigin)
+      .toHaveBeenCalledWith(0, 0);
+  });
+
+  it('should handle input events', () => {
+    scene.create();
+    
+    // Get and verify event handlers
+    const inputOn = scene.input.on as jest.Mock;
+    const clickHandler = inputOn.mock.calls[0][1] as () => void;
+    
+    clickHandler();
+    
+    expect(scene.gameText.setText)
+      .toHaveBeenCalledWith(expect.any(String));
+  });
+});
+```
+
+### Best Practices for Phaser Testing
+
+1. **Type Safety**
+   - Use TypeScript type assertions carefully with mocks
+   - Create interfaces for mock objects
+   - Handle private members through type assertions
+   - Use jest.Mock type for mocked functions
+
+2. **Mock Organization**
+   - Keep mock implementations minimal
+   - Group related mock objects (GameObjects, Input, etc.)
+   - Use factory functions for common mock objects
+   - Maintain mock hierarchy matching Phaser's structure
+
+3. **Testing Patterns**
+   - Test scene lifecycle methods independently
+   - Verify game object creation and configuration
+   - Test event handler registration and execution
+   - Check state changes and updates
+   - Validate scene transitions
+
+4. **Common Pitfalls**
+   - Avoid testing Phaser internals
+   - Don't over-mock Phaser features
+   - Handle async operations properly
+   - Clean up resources between tests
+   - Reset mocks in afterEach
+
+### Example: Testing Scene Transitions
+```typescript
+describe('Scene Transitions', () => {
+  it('should transition to new scene on event', () => {
+    // Arrange
+    const scene = new GameScene();
+    scene.scene = { start: jest.fn() } as any;
+    
+    // Act
+    scene.handleTransition();
+    
+    // Assert
+    expect(scene.scene.start)
+      .toHaveBeenCalledWith('NextScene');
+  });
+});
+```

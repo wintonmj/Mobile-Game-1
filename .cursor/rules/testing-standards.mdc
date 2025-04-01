@@ -2,7 +2,6 @@
 description: Enforces consistent testing practices for game components with a focus on state machines, event systems, and TypeScript best practices
 globs: ["**/*.test.ts", "**/*.spec.ts", "**/test/**/*.ts"]
 alwaysApply: true
-Rule Type: Auto
 ---
 # Testing Standards Guide
 

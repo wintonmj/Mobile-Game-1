@@ -8,7 +8,7 @@ export type ServiceId = string;
 /**
  * Service constructor type
  */
-export type ServiceConstructor<T extends IGameService> = new (...args: any[]) => T;
+export type ServiceConstructor<T extends IGameService> = new (...args: unknown[]) => T;
 
 /**
  * Service dependency configuration
