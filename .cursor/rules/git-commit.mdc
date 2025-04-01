@@ -1,24 +1,80 @@
 ---
-description: 
+description: Message contains "git commit"
+globs: 
+alwaysApply: false
+---
+---
+description: Provides a structured workflow for handling git commit operations with standardized messaging and documentation updates
 globs: 
 alwaysApply: true
 ---
-When a message contains "git commit":
+# Git Commit Rule
 
-You as 'the agent'
+## Description
+This rule provides a structured workflow for handling git commit operations, ensuring consistent commit message formatting and proper documentation updates. It standardizes the commit process across the project, reducing errors and improving code quality through automated checks and standardized messaging.
 
-1. return a runnable response that allows me run 'git status'
-2. The agent should create a one-line summary that will be used in the upcoming commit message
-3. The agent should create a summary that will be used in the upcoming commit message
-4. The agent should create the full commit message to be used
-    EXAMPLE:
-        '<one line summary>'
-        '<detailed summary>'
-        '<impact of the changes made>'
+## Trigger Conditions
+- Message contains "git commit"
 
-4. Return a runnable response that allows me to edit the commit message in the context window and do the following in one click: 
-    4.1 git add .  
-    4.2 git commit -m "<message from above following the example format>"
+## Implementation Guidelines
+1. Run npm run check to verify code quality and tests
+2. Execute git status to show current state
+3. Generate commit message components:
+   - One-line summary
+   - Detailed summary
+   - Impact statement
+4. Execute git operations in sequence:
+   - git add .
+   - git commit with formatted message
+   - git push
+5. Update [TODO](mdc:TODO) documentation post-push
+5. Update [CHANGELOG.md](mdc:docs/CHANGELOG.md) documentation post-push with the commit data
 
-5. Return a runnable response that allows me to 'git push'
-6. After the push has completed successfully I want you to update [TODO](mdc:TODO) according to its guiding design document and what we have updated
+## Examples
+```
+User: "git commit"
+Agent: [Runs npm run check]
+Agent: [Executes git status]
+Agent: [Generates commit message]
+    'Add new feature X'
+    'Implemented feature X with Y and Z components'
+    'This change improves user experience by...'
+Agent: [Executes git operations]
+Agent: [Updates [TODO](mdc:TODO) documentation]
+Agent: [Updates [CHANGELOG.md](mdc:docs/CHANGELOG.md) documentation]
+```
+
+## Best Practices
+- Always include all three message components
+- Ensure commit messages are descriptive and meaningful
+- Keep one-line summaries under 50 characters
+- Update documentation promptly after push
+- Verify git operations complete successfully
+- Run checks before committing to ensure code quality
+
+## Integration
+- Works in conjunction with update-todo-rule
+- Follows code-style guidelines for documentation
+- Maintains consistency with design documentation
+
+## Version Control
+- Track rule changes in version control (v1.0.0)
+- Document rule updates in CHANGELOG.md
+- Maintain rule history
+- Include rule version number in documentation
+
+## Success Metrics
+- Commit message quality (100% completion of all three components)
+- Documentation update rate (within 24 hours of commit)
+- Code quality check pass rate (100% before commit)
+- Git operation success rate (100% for all operations)
+- User adoption rate (measured through commit message compliance)
+
+## Accessibility
+- Clear, structured commit message format with consistent spacing
+- Automated checks reduce manual errors through pre-commit hooks
+- Standardized process for all team members with visual workflow diagrams
+- Clear error messages and feedback with specific resolution steps
+- Documentation updates ensure knowledge sharing through automated reminders
+- Color-coded status indicators for different commit stages
+- Screen reader compatible commit message templates

@@ -9,9 +9,9 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    extensions: ['.ts', '.js'],
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@assets': resolve(__dirname, 'src/assets')
     },
   },
   server: {
@@ -30,11 +30,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Phaser library goes into its own chunk
-          if (id.includes('node_modules/phaser')) {
-            return 'phaser';
-          }
-          
           // Split app code by module type
           if (id.includes('/src/models/')) {
             return 'models';
@@ -45,18 +40,54 @@ export default defineConfig({
           if (id.includes('/src/controllers/')) {
             return 'controllers';
           }
+          if (id.includes('/src/scenes/')) {
+            return 'scenes';
+          }
           
           // Handle other dependencies
           if (id.includes('node_modules/')) {
+            if (id.includes('phaser')) {
+              return 'phaser';
+            }
             return 'vendor';
           }
         }
       }
     },
-    // Increase the warning limit for Phaser which is a large library
-    chunkSizeWarningLimit: 1500
+    // Increase the warning limit for large chunks
+    chunkSizeWarningLimit: 1500,
+    // Optimize for production
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // Remove console.logs in production
+        drop_console: true
+      }
+    }
   },
   base: './',
-  assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.svg'],
+  assetsInclude: [
+    // Image formats
+    '**/*.png',
+    '**/*.jpg',
+    '**/*.jpeg',
+    '**/*.gif',
+    '**/*.svg',
+    // Audio formats
+    '**/*.mp3',
+    '**/*.ogg',
+    '**/*.wav',
+    // Font formats
+    '**/*.ttf',
+    '**/*.woff',
+    '**/*.woff2',
+    // Tilemap formats
+    '**/*.json',
+    '**/*.tmx',
+    '**/*.tsx'
+  ],
   publicDir: 'public',
+  optimizeDeps: {
+    include: ['phaser']
+  }
 }); 

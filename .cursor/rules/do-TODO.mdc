@@ -1,0 +1,52 @@
+---
+description: Provides guidance for implementing TODO tasks in the codebase
+globs: TODO
+alwaysApply: false
+---
+# TODO Task Implementation Guide
+
+## Description
+This rule provides a structured approach for handling @TODO comments and implementing the associated tasks. It ensures consistent documentation and implementation of TODO items across the codebase.
+
+## Trigger Conditions
+- Message contains "do TODO"
+- When encountering [TODO](mdc:TODO) comments in code
+- When assigned to implement a TODO task
+- When creating new documentation for planned features
+
+## Implementation Guidelines
+
+### 1. Preparation Process
+1. **Review Context**
+   - take only the first TODO list item
+   - Scan related files to understand the full context of the TODO task
+   - Check if supporting files already address parts of the requirement. Leverage [DocumentationGuide.md](mdc:docs/DocumentationGuide.md) to find the relevant docs
+   - Review relevant documentation in the appropriate folders 
+
+2. **Documentation**
+   - If updating existing functionality, update the relevant documentation
+   - If creating new functionality, create appropriate documentation following the structure in `docs/DocumentationGuide.md`
+   - Ensure all new documents are placed in the correct location within the documentation hierarchy
+
+3. **Implementation**
+   - Follow the architectural patterns defined in the project documentation
+   - Apply consistent coding standards and patterns
+   - Remove the @TODO comment when the task is completed
+   - Add appropriate tests for new functionality
+
+## Best Practices
+- Always check existing files before creating new ones
+- Keep documentation and implementation in sync
+- Follow the project's established patterns and guidelines
+- Update related documentation when implementing TODO items
+- Add clear comments for any new TODO items you create
+
+## Integration
+- This rule works alongside other code and documentation rules
+- It helps maintain consistency across the codebase
+- It ensures proper documentation of implemented features
+
+## Version Control
+- Current version: v1.0.0
+- Last updated: 2023-09-20
+- Change history: Initial creation

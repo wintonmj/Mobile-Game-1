@@ -1,0 +1,123 @@
+---
+description: Provides guidelines for creating and maintaining TODO documents with clear progress tracking and design document integration
+globs: ["**/TODO.md", "**/TODO"]
+alwaysApply: false
+---
+# TODO Document Management
+
+## Description
+This rule provides comprehensive guidelines for creating and maintaining TODO documents in the project. It ensures consistent documentation structure, clear progress tracking, and proper integration with design documents.
+
+## Trigger Conditions
+- Message contains "TODO" or "update todo"
+- When creating or modifying TODO documents
+- When updating project progress
+- When referencing design documents
+
+## Implementation Guidelines
+
+### Document Structure
+1. Header Requirements
+   - Use Level 2 heading (##)
+   - Title must reference associated design document
+   - Include description section with:
+     * Architecture context
+     * Feature purpose
+     * Design document reference
+
+2. Phase Organization
+   - Index numerically
+   - Represent logical components
+   - Use bold formatting for phase headings
+   - Example: "### Phase 1: Core Framework **"
+
+3. Step and Task Hierarchy
+   - Numbered steps under phases
+   - Bulleted tasks under steps
+   - Maintain clear indentation
+
+### Progress Tracking
+1. Task Completion
+   - Add ✅ to completed tasks
+   - Include file references
+   - Update design documentation
+
+2. Step Completion
+   - Mark step with ✅
+   - Remove completed tasks
+   - Update progress in design doc
+
+3. Phase Completion
+   - Mark phase with ✅
+   - Remove completed steps
+   - Review and validate implementation
+
+## Examples
+
+### Basic Structure
+```markdown
+## AssetService Implementation Plan
+
+This feature implements the core asset management system for our game engine.
+It handles loading, caching, and memory management of game assets.
+See design doc: /docs/asset-service-design.md
+
+### Phase 1: Core Framework ✅
+
+### Phase 2: Basic Loading System
+1. **Asset Loading Interface**
+   - Define base loader interface
+   - Implement texture loader
+   - Add audio loader
+
+2. **Error Handling** ✅
+```
+
+### Related Documents Section
+```markdown
+## Related Documents
+
+- [ServiceLayer-AssetService.md](mdc:documents/ServiceLayer-AssetService.md) - Complete implementation details
+- [ServiceLayer-Overview.md](mdc:documents/ServiceLayer-Overview.md) - Architecture context
+- [EventBusService.ts](mdc:src/services/EventBusService.ts) - Event system integration
+```
+
+## Best Practices
+- Keep tasks specific and actionable
+- Maintain clear hierarchy
+- Update design docs with progress
+- Include file references for completed tasks
+- Regular progress reviews
+- Clear phase boundaries
+- Consistent formatting
+
+## Integration
+- Links to design documents
+- References to implementation files
+- Progress tracking system
+- Documentation updates
+- Code review process
+
+## Version Control
+- Track rule changes in version control (v1.0.0)
+- Document rule updates in CHANGELOG.md
+- Maintain rule history
+- Include rule version number in documentation
+
+## Success Metrics
+- Documentation completeness (100%)
+- Progress tracking accuracy (100%)
+- Design doc synchronization (100%)
+- Task completion rate
+- Phase completion time
+- Documentation update frequency
+- Review compliance rate
+
+## Accessibility
+- Clear hierarchical structure
+- Consistent formatting
+- Screen reader compatible markdown
+- Color-coded progress indicators
+- Clear section headings
+- Logical document flow
+- Descriptive task descriptions

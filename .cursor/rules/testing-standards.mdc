@@ -1,0 +1,363 @@
+---
+description: Enforces consistent testing practices for game components with a focus on state machines, event systems, and TypeScript best practices
+globs: ["**/*.test.ts", "**/*.spec.ts", "**/test/**/*.ts"]
+alwaysApply: true
+Rule Type: Auto
+---
+# Testing Standards Guide
+
+## Description
+This rule defines comprehensive testing standards for our game project, ensuring effective test implementation for state machines, event systems, and complex game components. It provides guidelines for test organization, implementation patterns, and best practices to maintain high-quality, maintainable test code across the codebase.
+
+## Trigger Conditions
+- Creation of new test files
+- Modification of existing test files
+- Implementation of new features requiring tests
+- Code review processes for test code
+- Refactoring of test suites
+
+## Implementation Guidelines
+
+### 1. Test Organization and Structure (High Priority)
+1. **Directory Structure**:
+   - Organize tests to mirror source code structure
+   - Group tests by category (unit, integration, performance, visual)
+   - Follow the structure defined in jest-testing-strategy.md:
+   ```
+   tests/
+   ├── unit/                      # Isolated component tests
+   │   ├── services/              # Service tests
+   │   ├── entities/              # Entity tests
+   │   └── controllers/           # Controller tests
+   ├── integration/               # Tests for component interactions
+   ├── performance/               # Performance-focused tests
+   ├── visual/                    # Visual regression tests (optional)
+   └── helpers/                   # Test helpers and mocks
+       ├── phaser-mock.ts         # Phaser.js mocking utilities
+       ├── scene-test-bed.ts      # Scene testing utilities
+       └── test-utils.ts          # General test utilities
+   ```
+
+2. **File Naming Conventions**:
+   - Use `.test.ts` or `.spec.ts` suffix for test files
+   - Name test files to match the source file being tested:
+     - `player.service.ts` → `player.service.test.ts`
+     - `combat.system.ts` → `combat.system.test.ts`
+   - Use `describe` blocks to group related tests
+   - Use descriptive test names with the pattern "should [expected behavior] when [condition]"
+
+3. **Test Suite Organization**:
+   - Start with a comprehensive describe block identifying the component under test
+   - Group related test cases in nested describe blocks
+   - Order tests from simple to complex
+   - Separate setup code using beforeEach/beforeAll
+   - Use afterEach/afterAll for cleanup
+   - Maximum test file length: 300 lines (refactor if longer)
+
+### 2. Test Types and Coverage (High Priority)
+1. **Unit Tests**:
+   - Test individual components in isolation
+   - Mock dependencies and external systems
+   - Focus on public API behavior
+   - Cover edge cases and error conditions
+   - Test state transitions and event emissions
+   - Aim for 90% coverage for core services
+
+2. **Integration Tests**:
+   - Test interactions between components
+   - Focus on service-to-service communication
+   - Test complete game systems (combat, quests, inventory)
+   - Verify event handling across components
+   - Test scene transitions and state preservation
+
+3. **Performance Tests**:
+   - Test rendering performance for critical scenes
+   - Measure memory usage and processing time
+   - Establish benchmarks for core systems
+   - Verify asset loading performance
+
+4. **Visual Tests** (when applicable):
+   - Implement screenshot comparison tests
+   - Verify UI rendering consistency
+   - Test animations and visual effects
+
+5. **Coverage Requirements**:
+   - Overall project: 80% line coverage
+   - Core services: 90% line coverage
+   - Entity models: 85% line coverage
+   - Controller logic: 80% line coverage
+   - UI components: 70% line coverage
+
+### 3. Game-Specific Test Patterns (Highest Priority)
+1. **State Machine Testing**:
+   - Test state transitions and their conditions
+   - Verify invalid transitions are properly blocked
+   - Test side effects of state changes
+   - Verify complete state sequences
+   - Use spies to monitor state change events
+
+2. **Event-Based System Testing**:
+   - Test event emission with correct payloads
+   - Verify event handling and state changes
+   - Test event subscription and unsubscription
+   - Verify event bubbling through component hierarchy
+   - Test event transformations and filtering
+
+3. **Combined State and Event Testing**:
+   - Test how events trigger state changes
+   - Verify state transitions emit appropriate events
+   - Test complex game flows involving multiple state machines
+   - Verify integration between subsystems
+   - Test complete gameplay sequences
+
+### 4. Test Implementation Best Practices (High Priority)
+1. **Arrange-Act-Assert Pattern**:
+   - Clearly separate test setup, actions, and assertions
+   - Use comments to mark these sections for complex tests
+   - Set up initial state explicitly in each test
+   - Perform a single action or small related set of actions
+   - Make specific, targeted assertions about the outcome
+
+2. **Test Independence**:
+   - Each test should be fully independent
+   - Avoid test interdependencies
+   - Reset state between tests using beforeEach
+   - Mock external systems consistently
+   - Avoid shared mutable state across tests
+
+3. **Mocking Strategies**:
+   - Use explicit, type-safe mocks
+   - Create reusable mock factories for common objects
+   - Prefer partial mocks over complete object mocks
+   - Verify mock interactions as part of assertions
+   - Reset mocks between tests
+
+4. **Asynchronous Testing**:
+   - Always use async/await for asynchronous tests
+   - Handle promises properly
+   - Use Jest's timer mocks for time-dependent tests
+   - Test both success and failure paths
+   - Avoid mixing real and fake timers
+
+### 5. Documentation and Readability (Medium Priority)
+1. **Test Documentation**:
+   - Add descriptive JSDoc comments for test suites
+   - Document test setup requirements
+   - Explain complex test scenarios
+   - Document test data generation
+   - Use descriptive variable names
+
+2. **Test Readability**:
+   - Keep tests concise and focused
+   - Use helper functions for repeated setup
+   - Create readable assertions
+   - Use custom matchers for domain-specific assertions
+   - Break complex tests into smaller, focused tests
+
+3. **Test Helper Documentation**:
+   - Document all test helpers and utilities
+   - Explain mock factory usage
+   - Document custom matchers
+   - Provide examples of helper usage
+   - Keep helper implementations simple and reliable
+
+### 6. Anti-Patterns to Avoid (Medium Priority)
+1. **Implementation Testing**:
+   - Avoid testing private methods directly
+   - Focus on observable behavior
+   - Test through the public API
+   - Don't test implementation details that may change
+
+2. **Overlapping Tests**:
+   - Avoid testing the same behavior multiple times
+   - Define clear test scope and boundaries
+   - Use integration tests for cross-component behavior
+   - Avoid duplicating assertions across tests
+
+3. **Brittle Tests**:
+   - Avoid hardcoding implementation details
+   - Don't rely on specific implementation ordering
+   - Avoid excessive mocking
+   - Don't test framework or library behavior
+
+## Examples
+
+### State Machine Testing Example
+```typescript
+// Character state machine test
+describe('Character State Machine', () => {
+  let character;
+  
+  beforeEach(() => {
+    character = new Character('test-character');
+  });
+  
+  test('should transition from idle to walking when move command is issued', () => {
+    // Arrange - starting state
+    expect(character.currentState).toBe(CharacterState.IDLE);
+    
+    // Act - trigger state change
+    character.move({ x: 10, y: 0 });
+    
+    // Assert - verify new state
+    expect(character.currentState).toBe(CharacterState.WALKING);
+    expect(character.velocity.x).toBe(10);
+  });
+  
+  test('should not transition to jumping when swimming', () => {
+    // Arrange - set up complex initial state
+    character.move({ x: 0, y: 0 });
+    character.enterWater();
+    expect(character.currentState).toBe(CharacterState.SWIMMING);
+    
+    // Act - attempt invalid transition
+    character.jump();
+    
+    // Assert - verify state unchanged
+    expect(character.currentState).toBe(CharacterState.SWIMMING);
+    expect(character.jumpAttempted).toBe(true);
+    expect(character.errorMessage).toContain('Cannot jump while swimming');
+  });
+});
+```
+
+### Event-Based System Testing Example
+```typescript
+// Game events test
+describe('GameEventSystem', () => {
+  let eventSystem;
+  let playerEntity;
+  
+  beforeEach(() => {
+    // Reset event system
+    eventSystem = new GameEventSystem();
+    
+    // Create test entities
+    playerEntity = createTestPlayer({ id: 'player-1', health: 100 });
+  });
+  
+  test('should emit damage event when entity takes damage', () => {
+    // Arrange
+    const damageSpy = jest.fn();
+    eventSystem.on('entity.damaged', damageSpy);
+    
+    // Act
+    playerEntity.takeDamage(10);
+    
+    // Assert
+    expect(damageSpy).toHaveBeenCalledWith({
+      entityId: 'player-1',
+      damageAmount: 10,
+      currentHealth: 90,
+      type: 'physical'
+    });
+  });
+  
+  test('should handle multiple event subscriptions correctly', () => {
+    // Arrange
+    const gameUISpy = jest.fn();
+    const audioSpy = jest.fn();
+    
+    eventSystem.on('entity.defeated', gameUISpy);
+    eventSystem.on('entity.defeated', audioSpy);
+    
+    // Act
+    playerEntity.health = 0;
+    playerEntity.checkStatus(); // This should trigger defeated event
+    
+    // Assert - all subscribers should be notified
+    expect(gameUISpy).toHaveBeenCalledTimes(1);
+    expect(audioSpy).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+### Combined State and Event Testing Example
+```typescript
+describe('CombatSystem - State and Events Integration', () => {
+  let combatSystem;
+  let player;
+  let enemy;
+  let eventSpy;
+  
+  beforeEach(() => {
+    combatSystem = new CombatSystem();
+    player = createTestPlayer();
+    enemy = createTestEnemy();
+    
+    // Add entities to combat system
+    combatSystem.addCombatant(player);
+    combatSystem.addCombatant(enemy);
+    
+    // Spy on all events
+    eventSpy = jest.fn();
+    combatSystem.events.onAny(eventSpy);
+  });
+  
+  test('should transition through combat states and emit appropriate events', () => {
+    // Arrange - ensure starting state
+    expect(combatSystem.state).toBe(CombatState.INACTIVE);
+    
+    // Act - initialize combat
+    combatSystem.initiateCombat();
+    
+    // Assert - verify state and events
+    expect(combatSystem.state).toBe(CombatState.INITIALIZING);
+    expect(eventSpy).toHaveBeenCalledWith('combat.initializing', 
+      expect.objectContaining({ combatants: expect.arrayContaining([player.id, enemy.id]) })
+    );
+    
+    // Act - start combat
+    eventSpy.mockClear();
+    combatSystem.startCombat();
+    
+    // Assert
+    expect(combatSystem.state).toBe(CombatState.ACTIVE);
+    expect(eventSpy).toHaveBeenCalledWith('combat.started', expect.any(Object));
+  });
+});
+```
+
+## Best Practices
+- Write tests before or alongside implementation
+- Focus on behavior, not implementation details
+- Keep tests independent and isolated
+- Use descriptive test names that explain the expected behavior
+- Create reusable test factories and helpers
+- Mock external dependencies consistently
+- Test edge cases and error conditions
+- Maintain test code quality at the same level as production code
+- Review test coverage reports regularly
+- Update tests when refactoring related code
+- Use the test patterns in test-implementation-details.md as reference
+- Follow TypeScript best practices for type safety in tests
+- Use arrange-act-assert pattern consistently
+- Verify both positive and negative test cases
+- Keep mock implementations simple
+
+## Integration
+- Works alongside the typescript.mdc standards
+- Complements the jest-testing-strategy.md testing approach
+- Aligns with project architecture defined in MVPHighLevelArchitecture.md
+- Supports test implementation patterns defined in test-implementation-details.md
+- Integrates with CI/CD pipeline configuration
+- Supports code coverage requirements
+- Works with Jest configuration and tooling
+- Aligns with overall quality assurance goals
+
+## Version Control
+- Current version: v1.0.0
+- Last updated: 2023-11-20
+- Change history: Initial creation combining testing standards
+
+## Success Metrics
+- Reduction in test-related bugs and regressions
+- Achievement of coverage targets (80% overall)
+- Improved test readability and maintainability
+- Faster developer onboarding for testing practices
+- Consistent implementation of test patterns
+- Reduction in flaky tests
+- Improved state and event testing coverage
+- Faster test execution and feedback
+- Better isolation of test failures
+- Improved mock usage and management 

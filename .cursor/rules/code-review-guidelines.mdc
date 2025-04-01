@@ -1,0 +1,380 @@
+---
+description: When asked to review, analyze or scrutinize a file or solution
+globs: 
+alwaysApply: false
+---
+---
+description: Comprehensive guidelines for reviewing TypeScript files (.ts, .test.ts) with specific focus on Phaser.js game development and TypeScript best practices
+globs: ["**/*.ts", "**/*.test.ts"]
+alwaysApply: false
+---
+# Code Review Guidelines
+
+## Description
+This rule defines the comprehensive review process for TypeScript files (.ts and .test.ts) and provides specific evaluation criteria for each. It ensures consistent, thorough reviews across implementation code and test files, with specific focus on Phaser.js game development practices and TypeScript language features.
+
+## Trigger Conditions
+- When asked to review, analyze or scrutinize a file or solution
+- Code review requests for any supported file type
+- Pull request reviews
+- Quality assurance checks
+- Pre-deployment verification
+
+## Implementation Guidelines
+
+### 1. TypeScript (.ts) File Reviews
+1. **Comprehensive Code Review**:
+   - Create a separate file named `code-review-comments.md` for detailed comments
+   - Review code structure, organization, and architecture
+   - Assess code quality, readability, and maintainability
+   - Evaluate adherence to project coding standards and best practices
+   - Identify potential bugs, edge cases, or failure scenarios
+   - Analyze performance considerations and optimization opportunities
+   - Check for security vulnerabilities or unsafe practices
+   - Evaluate proper usage of TypeScript features (@TypeScript - type checking, interfaces, generics)
+   - Verify correct usage of Phaser.js APIs and patterns (@Phaser - scene management, game objects, physics)
+
+2. **TypeScript-Specific Checks (@TypeScript)**:
+   - Verify proper use of TypeScript types, interfaces, and type guards
+   - Check for appropriate use of type annotations and avoid excessive use of 'any'
+   - Ensure proper use of nullability checks and optional chaining
+   - Review generic type usage and constraints
+   - Check for consistent use of TypeScript features like enums, tuples, and literal types
+   - Verify correct typing of function parameters and return types
+   - Review for proper use of type assertions only when necessary
+   - Identify cases where stricter type checking should be applied (`noImplicitAny`, `strictNullChecks`)
+   - Check for appropriate use of JSDoc comments to improve IDE intellisense
+
+3. **Phaser.js-Specific Checks (@Phaser)**:
+   - Verify proper scene initialization and lifecycle method usage
+   - Check for memory leaks in scene transitions and object management
+   - Review proper use of Phaser's physics systems and collision handling
+   - Evaluate appropriate use of Phaser's game object factory and creation patterns
+   - Check for proper asset loading and texture management
+   - Verify correct implementation of input handling and event systems
+   - Review animation implementations for efficiency and correctness
+   - Evaluate camera usage and scene boundaries
+   - Check for proper use of Phaser's time and tweening systems
+   - Verify correct implementation of game state management
+
+4. **Issue Resolution Plan**:
+   - Provide a detailed, prioritized plan to address identified issues
+   - Include specific code examples showing how to fix each problem
+   - Explain the reasoning behind suggested changes
+   - Offer alternative approaches when multiple solutions exist
+   - Reference relevant TypeScript and Phaser.js documentation
+
+5. **Code Context and Decision Analysis**:
+   - Analyze and explain the context in which the code operates
+   - Discuss the apparent decisions made during implementation
+   - Evaluate whether decisions align with project architecture and patterns
+   - Suggest architectural improvements where appropriate
+   - Consider Phaser.js best practices and common patterns
+
+6. **Code Example Comparison**:
+   - Provide examples of both good and problematic code from the review
+   - Explain why certain patterns are preferred over others
+   - Illustrate before/after comparisons for suggested improvements
+   - Reference Phaser.js documentation for recommended patterns (@Phaser)
+
+7. **Code Improvement Strategies**:
+   - Demonstrate how to improve the code with concrete examples
+   - Provide sample test implementations or testing strategies
+   - Show refactoring examples that improve readability or maintainability
+   - Suggest optimization techniques with examples and expected benefits
+   - Outline security improvements with specific implementation guidance
+   - Reference TypeScript language features that could improve the code (@TypeScript)
+   - Suggest Phaser.js patterns that might solve the problem more elegantly (@Phaser)
+
+8. **Standard Compliance Plan**:
+   - Whether the code meets standards or not, provide a detailed improvement plan
+   - For code meeting standards: suggest enhancements to exceed requirements
+   - For code below standards: prioritize critical issues and provide step-by-step remediation
+   - Reference TypeScript compiler options that could catch similar issues (@TypeScript)
+
+### 2. Test TypeScript (.test.ts) File Reviews
+1. **Testing Strategy Compliance**:
+   - Check compliance with project's testing strategy
+   - Verify that tests follow the project's testing patterns and conventions
+   - Ensure proper use of mocks, stubs, and test fixtures
+   - Evaluate test naming conventions and organization
+   - Verify appropriate testing of Phaser.js components and game logic (@Phaser)
+
+2. **Test Purpose Analysis**:
+   - Clearly identify what each test is attempting to verify
+   - Determine if the test appropriately validates the intended functionality
+   - Check if assertions accurately test the expected behavior
+   - Verify edge cases and error conditions are properly tested
+   - Ensure Phaser.js-specific components are tested appropriately (@Phaser)
+
+3. **Test Coverage Assessment**:
+   - Identify potential duplication with existing tests
+   - Check for gaps in test coverage
+   - Ensure important edge cases are covered
+   - Verify that both positive and negative test cases exist
+   - Check for proper testing of TypeScript types and interfaces (@TypeScript)
+   - Verify coverage of Phaser.js component lifecycle methods (@Phaser)
+
+4. **Test Complexity Evaluation**:
+   - Assess if tests are unnecessarily complex for what they're testing
+   - Identify tests that are testing too many things at once
+   - Check for overly complicated setup or teardown procedures
+   - Evaluate readability and maintainability of test code
+   - Check for proper isolation of Phaser.js components in tests (@Phaser)
+
+5. **Test Decomposition Recommendations**:
+   - Suggest how complex tests can be broken into smaller, focused tests
+   - Provide examples of how to refactor complicated test scenarios
+   - Recommend shared fixtures or setup utilities where appropriate
+   - Demonstrate how to improve test isolation and independence
+   - Show proper testing patterns for Phaser.js scenes and game objects (@Phaser)
+
+## Examples
+
+### TypeScript Review Example (@TypeScript)
+```typescript
+// Original code with issues
+function getUserData(id: any) {
+  const data = fetch('/api/users/' + id);
+  return data;
+}
+
+// Improved code with review comments
+/**
+ * Fetches user data from the API
+ * @param id - The user's unique identifier
+ * @returns A promise containing the user data
+ * 
+ * Improvements:
+ * 1. Added proper TypeScript typing
+ * 2. Uses template literals for string concatenation
+ * 3. Properly handles the Promise returned by fetch
+ * 4. Adds error handling
+ * 5. Includes proper JSDoc documentation
+ */
+async function getUserData(id: string): Promise<UserData> {
+  try {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user: ${response.status}`);
+    }
+    return await response.json() as UserData;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    throw error;
+  }
+}
+```
+
+### Phaser Game Review Example (@Phaser)
+```typescript
+// Original code with issues
+class GameScene extends Phaser.Scene {
+  constructor() {
+    super('GameScene');
+  }
+  
+  create() {
+    this.player = this.add.sprite(100, 100, 'player');
+    this.cursors = this.input.keyboard.createCursorKeys();
+  }
+  
+  update() {
+    if (this.cursors.left.isDown) {
+      this.player.x -= 5;
+    }
+    else if (this.cursors.right.isDown) {
+      this.player.x += 5;
+    }
+  }
+}
+
+// Improved code with review comments
+/**
+ * Main game scene handling player movement and game logic
+ * @see {@link https://docs.phaser.io/api-documentation/Phaser.Scene.html Phaser.Scene}
+ */
+class GameScene extends Phaser.Scene {
+  private player!: Phaser.GameObjects.Sprite;
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private speed: number = 200;
+  
+  constructor() {
+    super('GameScene');
+  }
+  
+  create(): void {
+    // Create player sprite and enable physics
+    this.player = this.physics.add.sprite(100, 100, 'player');
+    this.player.setCollideWorldBounds(true);
+    
+    // Initialize input
+    this.cursors = this.input.keyboard.createCursorKeys();
+    
+    // Setup world bounds
+    this.physics.world.setBounds(0, 0, this.sys.game.config.width as number, 
+                                this.sys.game.config.height as number);
+  }
+  
+  update(time: number, delta: number): void {
+    // Reset velocity each frame
+    this.player.setVelocity(0);
+    
+    // Apply velocity based on input - using delta for frame-rate independent movement
+    if (this.cursors.left.isDown) {
+      this.player.setVelocityX(-this.speed);
+    } else if (this.cursors.right.isDown) {
+      this.player.setVelocityX(this.speed);
+    }
+    
+    if (this.cursors.up.isDown) {
+      this.player.setVelocityY(-this.speed);
+    } else if (this.cursors.down.isDown) {
+      this.player.setVelocityY(this.speed);
+    }
+  }
+  
+  // Properly destroy objects when scene is shut down
+  shutdown(): void {
+    this.player.destroy();
+    this.input.keyboard.shutdown();
+  }
+}
+```
+
+### Test File Review Example
+```typescript
+// Original test - too complex and testing multiple things
+test('player movement', () => {
+  const scene = new GameScene();
+  scene.create();
+  scene.update();
+  expect(scene.player.x).toBe(100);
+  scene.cursors.right.isDown = true;
+  scene.update();
+  expect(scene.player.x).toBe(105);
+});
+
+// Improved tests - broken down into focused unit tests with proper Phaser.js testing patterns
+describe('GameScene', () => {
+  let scene: GameScene;
+  let mockPhysics: jest.Mocked<Phaser.Physics.Arcade.ArcadePhysics>;
+  let mockPlayer: jest.Mocked<Phaser.Physics.Arcade.Sprite>;
+  
+  beforeEach(() => {
+    // Setup mock Phaser physics and sprite
+    mockPlayer = {
+      setVelocity: jest.fn(),
+      setVelocityX: jest.fn(),
+      setVelocityY: jest.fn(),
+      setCollideWorldBounds: jest.fn(),
+      destroy: jest.fn()
+    } as unknown as jest.Mocked<Phaser.Physics.Arcade.Sprite>;
+    
+    mockPhysics = {
+      add: {
+        sprite: jest.fn().mockReturnValue(mockPlayer)
+      },
+      world: {
+        setBounds: jest.fn()
+      }
+    } as unknown as jest.Mocked<Phaser.Physics.Arcade.ArcadePhysics>;
+    
+    // Create scene with mocks
+    scene = new GameScene();
+    scene.physics = mockPhysics;
+    scene.input = {
+      keyboard: {
+        createCursorKeys: jest.fn().mockReturnValue({
+          left: { isDown: false },
+          right: { isDown: false },
+          up: { isDown: false },
+          down: { isDown: false }
+        }),
+        shutdown: jest.fn()
+      }
+    } as unknown as Phaser.Input.InputPlugin;
+    
+    scene.sys = {
+      game: {
+        config: {
+          width: 800,
+          height: 600
+        }
+      }
+    } as unknown as Phaser.Scenes.Systems;
+    
+    // Initialize scene
+    scene.create();
+  });
+  
+  test('should initialize player with correct position and physics', () => {
+    // Verify sprite creation and physics setup
+    expect(mockPhysics.add.sprite).toHaveBeenCalledWith(100, 100, 'player');
+    expect(mockPlayer.setCollideWorldBounds).toHaveBeenCalledWith(true);
+    expect(mockPhysics.world.setBounds).toHaveBeenCalledWith(0, 0, 800, 600);
+  });
+  
+  test('should move player right when right arrow pressed', () => {
+    // Setup
+    scene.cursors.right.isDown = true;
+    
+    // Act
+    scene.update(0, 16);
+    
+    // Assert
+    expect(mockPlayer.setVelocityX).toHaveBeenCalledWith(200);
+  });
+  
+  test('should move player left when left arrow pressed', () => {
+    // Setup
+    scene.cursors.left.isDown = true;
+    
+    // Act
+    scene.update(0, 16);
+    
+    // Assert
+    expect(mockPlayer.setVelocityX).toHaveBeenCalledWith(-200);
+  });
+  
+  test('should cleanup resources when shutdown', () => {
+    // Act
+    scene.shutdown();
+    
+    // Assert
+    expect(mockPlayer.destroy).toHaveBeenCalled();
+    expect(scene.input.keyboard.shutdown).toHaveBeenCalled();
+  });
+});
+```
+
+## Best Practices
+- Be specific and actionable in all review comments
+- Provide examples rather than theoretical advice when possible
+- Balance critique with positive reinforcement of good practices
+- Prioritize issues by impact (security > functionality > performance > style)
+- Consider the developer's experience level when providing feedback
+- Focus on patterns rather than isolated issues
+- Provide context for why a change is recommended
+- When suggesting alternatives, explain the benefits
+- Reference TypeScript and Phaser.js documentation when applicable
+
+## Integration
+- This rule should be used alongside TypeScript-specific linting rules (@TypeScript)
+- References Phaser.js patterns defined in project documentation (@Phaser)
+- Complements automated testing and code quality tools
+- Works with TypeScript's compiler options and static analysis tools
+
+## Version Control
+- Current version: v1.1.0
+- Last updated: 2023-09-15
+- Change history: Updated to focus on TypeScript and Phaser.js specifics
+
+## Success Metrics
+- Reduction in bugs and issues found in later stages
+- Improved code quality metrics
+- Faster onboarding of new team members to codebase
+- Increased test coverage and quality
+- Reduced technical debt
+- More consistent implementation of architectural patterns
+- Better utilization of TypeScript features and Phaser.js APIs

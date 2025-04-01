@@ -1,0 +1,115 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Automatically includes key project documentation files for context when working with any project files
+globs: ["**/*"]
+alwaysApply: true
+---
+# Project Documentation Context
+
+## Description
+This rule ensures that key project documentation files are always included as context when working with any files in the project. These documentation files provide essential information about the project's architecture, design goals, implementation plan, and technical stack.
+
+## Trigger Conditions
+- Creation of new files
+- Modification of existing files
+- When reviewing code or documentation
+- When implementing new features
+- When fixing bugs or refactoring code
+
+## Implementation Guidelines
+
+### 1. Files to Include as Context
+1. **Sprint 1 Implementation Plan**: 
+   - File: `docs/Implementation/sprint1-implementation-plan.md`
+   - Purpose: Provides detailed implementation tasks, technical decisions, and deliverables for Sprint 1
+   - When relevant: Implementation of core architecture, service patterns, and foundational features
+
+2. **MVP Design Document**:
+   - File: `docs/design/mvp-design.md`
+   - Purpose: Outlines the Minimum Viable Product design, core features, and rationale
+   - When relevant: Feature implementation decisions, scope considerations, and future planning
+
+3. **MVP High-Level Architecture**:
+   - File: `docs/architecture/patterns/mvp-high-level-architecture.md`
+   - Purpose: Details the technical architecture for implementing the MVP features
+   - When relevant: Service design, data flow implementation, and system organization
+
+4. **Technical Stack Documentation**:
+   - File: `docs/architecture/technical-stack.md`
+   - Purpose: Documents the final implementation choices for the technical stack
+   - When relevant: Technology selection, configuration details, and best practices
+
+### 2. Usage Guidelines
+1. **Always review these documents** before making significant changes to:
+   - Core architecture components
+   - Service implementations
+   - Scene management
+   - Entity systems
+   - Game state handling
+   
+2. **Reference specific sections** of these documents when:
+   - Implementing new features
+   - Refactoring existing code
+   - Discussing architectural decisions
+   - Onboarding new team members
+
+3. **Maintain consistency** with the patterns and approaches defined in these documents
+
+## Examples
+
+### When Implementing a New Service
+```typescript
+// Good example - following the service registry pattern from Sprint1ImplementationPlan.md
+import { ServiceRegistry } from '../core/ServiceRegistry';
+
+export class NewGameService implements IGameService {
+  private static instance: NewGameService;
+  
+  public static getInstance(): NewGameService {
+    if (!NewGameService.instance) {
+      NewGameService.instance = new NewGameService();
+    }
+    return NewGameService.instance;
+  }
+  
+  async init(): Promise<void> {
+    // Implementation following architecture guidelines
+  }
+  
+  destroy(): void {
+    // Proper cleanup as defined in the architecture
+  }
+}
+
+// Register with service registry as defined in architecture
+ServiceRegistry.getInstance().register('newService', NewGameService.getInstance());
+```
+
+## Best Practices
+- Always consult these documentation files before making architectural decisions
+- Keep implementations consistent with the patterns defined in these documents
+- Use the terminology consistently across codebase
+- When extending the architecture, document changes in the appropriate files
+- Consider the MVP scope when implementing new features
+
+## Integration
+- This rule works alongside code-specific rules
+- It provides context for code formatting and structure rules
+- It helps ensure architectural consistency
+- It supports the development workflow defined in project documentation
+
+## Version Control
+- Current version: v1.0.0
+- Last updated: 2023-09-01
+- Change history: Initial creation
+
+## Success Metrics
+- Consistent implementation of architectural patterns
+- Code that aligns with MVP design goals
+- Reduced architectural drift
+- Improved developer onboarding
+- Fewer implementation inconsistencies

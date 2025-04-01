@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+title: Documentation Completeness Checker
+description: Systematic approach for validating documentation completeness
+---
+
+# Documentation Completeness Review Process
+
+1. Verify core documentation coverage:
+   - Implementation plans
+   - Architecture designs
+   - Technical specifications
+   - Testing strategies
+
+2. Check alignment between:
+   - Implementation code
+   - Documentation
+   - Test coverage
+
+3. Identify gaps in:
+   - Development workflows
+   - Technical decisions
+   - Implementation details
+   - Integration points
+
+4. Key questions to assess:
+   - Are all features properly documented?
+   - Do implementation guides match the codebase?
+   - Are there clear examples for major components?
+   - Is the documentation actionable for developers?
+   - Are technical decisions sufficiently explained?
+
+5. Recommended additions before implementation:
+   [Add recommendations based on documentation analysis]
+
+Review all of @docs  with a focus on @Sprint1ImplementationPlan.md 
+
+Is there any additional docs or planning that you recommend we prepare before starting on the implementation?
+

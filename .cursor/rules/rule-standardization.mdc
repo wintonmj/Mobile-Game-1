@@ -1,0 +1,174 @@
+---
+description: Creation or modification of new rule files (*.mdc)
+globs: 
+alwaysApply: false
+---
+---
+description: Defines standardized formatting and structure for all Cursor rule files to ensure consistency and maintainability
+globs: ["**/*.mdc"]
+alwaysApply: true
+Rule Type: 
+---
+# Rule Standardization Guide
+
+## Description
+This rule defines the standardized format for all Cursor rules, ensuring consistent structure, formatting, and metadata across rule files. It serves as both a template and a validation mechanism for rule creation and maintenance.
+
+## Trigger Conditions
+- Creation of new rule files (*.mdc)
+- Modification of existing rule files
+- When reviewing rule documentation
+
+## Implementation Guidelines
+
+### 1. Metadata Header (Required)
+- Use YAML frontmatter format with three dashes above and below
+- Include the following fields:
+  - `description`: Brief, one-sentence summary of the rule's purpose
+  - `globs`: Array of file patterns the rule applies to (use empty array if none)
+  - `alwaysApply`: Boolean indicating if rule should be applied regardless of file context
+  - `RuleType`: string indicating if rule should be applied always, auto attached, agent requested, manual.
+- Example:
+  ```yaml
+  ---
+  description: Brief description of the rule's purpose and function
+  globs: ["*.ts", "*.tsx"]
+  alwaysApply: false
+  Rule Type: Manual
+  ---
+  ```
+
+### 2. Main Structure (Required)
+1. **Title** (H1): Clear, concise rule name
+2. **Description** (H2): Detailed explanation of rule purpose and function
+3. **Trigger Conditions** (H2): List of conditions when rule should be applied
+4. **Implementation Guidelines** (H2): Core content of the rule
+5. **Examples** (H2): Practical usage examples
+6. **Best Practices** (H2): Recommendations for optimal use
+7. **Integration** (H2): How the rule works with other rules/systems
+8. **Version Control** (H2): Versioning information
+9. **Success Metrics** (H2): How to measure rule effectiveness
+
+### 3. Implementation Guidelines Section (Required)
+- Use H3 headings for major subsections
+- Number all items for clear reference
+- Include explanatory text for each guideline
+- Use bulleted lists for details under each numbered item
+- Maintain consistent heading levels
+
+### 4. Examples Section (Required)
+- Provide realistic, practical examples
+- Use code blocks with markdown syntax highlighting
+- Include both "Good" and "Bad" examples where relevant
+- Explain why examples demonstrate best practices
+
+### 5. Formatting Rules (Required)
+- Use standard Markdown syntax
+- H1 (#) for title only
+- H2 (##) for main sections
+- H3 (###) for subsections
+- H4 (####) for items under subsections
+- Use bulleted lists (-) for unordered items
+- Use numbered lists (1.) for sequential items or priorities
+- Code blocks should use triple backticks with language identifier
+
+## Examples
+
+### Complete Rule Template
+```markdown
+---
+description: Brief description of the rule's purpose
+globs: ["*.ts", "*.tsx"]
+alwaysApply: false
+---
+# Rule Name
+
+## Description
+Comprehensive description of what this rule does and why it exists.
+
+## Trigger Conditions
+- Condition 1
+- Condition 2
+- Condition 3
+
+## Implementation Guidelines
+
+### 1. Major Guideline Category
+1. **First Guideline**: Explanation of the guideline
+   - Detail point
+   - Detail point
+   - Detail point
+
+2. **Second Guideline**: Explanation of the guideline
+   - Detail point
+   - Detail point
+
+### 2. Another Major Category
+1. **Guideline**: Explanation
+   - Detail point
+   - Detail point
+
+## Examples
+
+### Example Category
+```typescript
+// Good example
+function goodExample() {
+  // Code that follows the rule
+}
+
+// Bad example
+function badExample() {
+  // Code that violates the rule
+}
+```
+
+## Best Practices
+- Best practice 1
+- Best practice 2
+- Best practice 3
+
+## Integration
+- How this rule works with other rules
+- Systems it integrates with
+- Dependencies or related documentation
+
+## Version Control
+- Current version: v1.0.0
+- Last updated: YYYY-MM-DD
+- Change history
+
+## Success Metrics
+- How to measure if the rule is working
+- Expected outcomes
+- Key performance indicators
+```
+
+## Best Practices
+- Keep rule files focused on a single concern
+- Use clear, descriptive language
+- Provide concrete examples for all guidelines
+- Keep metadata accurate and up-to-date
+- Link to related rules where appropriate
+- Use consistent terminology across all rules
+- Update version information when rules change
+- Test rules in context before finalizing
+
+## Integration
+- Works with all existing rule files
+- Should be applied when creating new rules
+- Validates rule structure during edits
+- Serves as documentation for rule authors
+
+## Version Control
+- Track rule changes in version control
+- Initial version: v1.0.0
+- Update version number when making significant changes
+- Document changes in a changelog
+
+## Success Metrics
+- Rule consistency across codebase (100%)
+- Documentation completeness (all required sections present)
+- User adoption of standardized format
+- Reduction in rule-related confusion
+- Improved maintenance efficiency

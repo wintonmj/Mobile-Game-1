@@ -1,0 +1,181 @@
+---
+description: Creation or updates of design documents in /docs or any nested folder
+globs: 
+alwaysApply: false
+---
+Rule Name: design-docs.mdc
+
+# Design Document Creation Rule
+
+## Description
+This rule defines the structure and format for creating design documents in our mobile game project, ensuring consistency with our documentation standards and best practices as defined in @DocumentationGuide.md.
+
+## Trigger Conditions
+- Creation of new design documents
+- Updates to existing design documents
+- Architecture changes requiring documentation
+- New component or system design
+
+## Implementation Guidelines
+
+### Document Types
+1. **Overview Documents** - High-level system architecture (e.g., @serviceLayer-overview.md)
+2. **Component Documents** - Detailed component design (e.g., @serviceLayer-asset-service.md)
+3. **Implementation Documents** - Completed designs (stored in /Implemented)
+
+### Required Sections
+
+#### All Design Documents Must Include:
+1. **Title** - Clear component/system name as H1
+2. **Problem Statement** - Numbered list of specific issues being addressed
+3. **Solution Approach/Overview** - High-level solution description
+4. **Component Design** - Detailed structure and interfaces
+5. **Test-Driven Development Approach** - Test plan with sample test cases
+6. **Implementation Plan** - Phased approach with timeline estimates
+
+#### Component Documents Must Also Include:
+1. **Role in Architecture** - How it fits into the larger system
+2. **Interface Definition** - TypeScript interfaces with JSDoc comments
+3. **Integration Points** - How it interacts with other systems
+
+### Section Structure
+
+#### Problem Statement Format:
+```markdown
+## Problem Statement
+
+Our mobile game architecture currently suffers from:
+
+1. **Issue Name** - Detailed description of the problem
+2. **Issue Name** - Detailed description of the problem
+3. **Issue Name** - Detailed description of the problem
+```
+
+#### Interface Definition Format:
+```markdown
+## Interface Definition
+
+```typescript
+/**
+ * @description Brief description of the interface
+ * @interface IServiceName
+ */
+export interface IServiceName {
+  // Method groups
+  methodName(param: Type): ReturnType;
+  methodName2(param: Type): ReturnType;
+  
+  // Next method group
+  anotherMethod(param: Type): ReturnType;
+}
+
+export enum RelatedEnum {
+  VALUE1 = 'value1',
+  VALUE2 = 'value2'
+}
+```
+```
+
+#### Test-Driven Development Format:
+```markdown
+## Test-Driven Development Approach
+
+### 1. Test Plan
+
+We'll implement the Component using TDD with these test categories:
+
+1. **Category Name**
+   - Specific test case (no implementation in this doc)
+   - Specific test case (no implementation in this doc)
+   - Specific test case (no implementation in this doc)
+
+2. **Category Name**
+   - Specific test case (no implementation in this doc)
+   - Specific test case (no implementation in this doc)
+```
+
+## Examples
+
+### Example Document Structure:
+```markdown
+# Asset Management System
+
+## Problem Statement
+Our current asset management system suffers from:
+1. **Inefficient Loading** - Assets are loaded all at once
+2. **Memory Management** - No proper cleanup of unused assets
+3. **Version Control** - No tracking of asset versions
+
+## Solution Approach
+Implement a progressive loading system with memory management...
+
+## Component Design
+[Detailed design with interfaces and diagrams]
+
+## Test-Driven Development Approach
+[Test plan and cases]
+
+## Implementation Plan
+1. Phase 1: Core Loading System
+2. Phase 2: Memory Management
+3. Phase 3: Version Control
+```
+
+## Best Practices
+
+### 1. Documentation Standards
+- Follow standards defined in @DocumentationGuide.md
+- Use consistent terminology across documents
+- Include visual aids where appropriate
+- Maintain clear navigation structure
+
+### 2. Code Documentation
+- Use JSDoc comments for all interfaces and methods
+- Include examples in documentation
+- Document all public APIs
+- Keep documentation up to date with code changes
+
+### 3. Accessibility
+- Use clear headings and structure
+- Include alt text for diagrams
+- Ensure color contrast compliance
+- Make documentation screen reader compatible
+
+### 4. Version Control
+- Track document changes in version control
+- Update CHANGELOG.md for significant changes
+- Maintain document history
+- Include version numbers in documentation
+
+## Integration
+
+### 1. Related Rules
+- @git-commit.mdc - For version control integration
+- @DocumentationGuide.md - For documentation standards
+- @CursorRulesGuide.md - For rule development guidelines
+
+### 2. Documentation Integration
+- Align with architecture documentation
+- Reference relevant API documentation
+- Link to implementation guides
+- Connect with testing documentation
+
+## Success Metrics
+
+### 1. Documentation Quality
+- Completeness of required sections
+- Technical accuracy
+- Code example validity
+- Link validity
+
+### 2. Implementation Impact
+- Design document adoption rate
+- Implementation success rate
+- Developer feedback
+- Support ticket reduction
+
+### 3. Maintenance Metrics
+- Documentation update frequency
+- Review completion rate
+- Version control compliance
+- Accessibility compliance
