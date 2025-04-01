@@ -46,4 +46,4 @@ export class LoadingScene extends Phaser.Scene {
     );
     this.progressBar = this.add.graphics();
   }
-} 
+}

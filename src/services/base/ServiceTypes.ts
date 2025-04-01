@@ -45,5 +45,5 @@ export enum ServiceState {
   INITIALIZED = 'INITIALIZED',
   DESTROYING = 'DESTROYING',
   DESTROYED = 'DESTROYED',
-  ERROR = 'ERROR'
-} 
+  ERROR = 'ERROR',
+}

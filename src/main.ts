@@ -9,4 +9,4 @@ window.addEventListener('load', () => {
 
   // Create and start the game
   new Phaser.Game(GameConfig);
-}); 
+});

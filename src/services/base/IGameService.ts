@@ -14,4 +14,4 @@ export interface IGameService {
    * Should handle resource cleanup, event unsubscription, and state cleanup
    */
   destroy(): void;
-} 
+}

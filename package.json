@@ -4,7 +4,7 @@
     "description": "A simple 2D dungeon crawler game using Phaser.js",
     "type": "module",
     "scripts": {
-        "prepare": "husky",
+        "prepare": "husky install",
         "start": "vite preview --config config/vite/vite.config.ts",
         "dev": "vite --config config/vite/vite.config.ts",
         "build": "tsc --project config/typescript/tsconfig.json && vite build --config config/vite/vite.config.ts",

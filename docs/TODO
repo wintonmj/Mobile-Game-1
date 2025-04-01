@@ -40,8 +40,8 @@
 
 ## Development Workflow (Days 2-3)
 - [-] Document Git workflow
-  - [-] Set up Git hooks for pre-commit linting
-    - [-] Check docs/implementation/development-workflow.md for hook configuration
+  - [x] Set up Git hooks for pre-commit linting
+    - [x] Check docs/implementation/development-workflow.md for hook configuration
   - [ ] Configure automatic test running
     - [ ] Review docs/testing/jest-testing-strategy.md for test automation
 - [ ] Create PR templates
