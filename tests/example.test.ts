@@ -1,7 +1,27 @@
+/**
+ * Example Scene Test Implementation
+ * 
+ * @file example.test.ts
+ * @group unit
+ * @group scenes
+ * @description Demonstrates proper scene testing patterns including sprite creation, text handling, and input management
+ * @since 1.0.0
+ * @module tests/example
+ * 
+ * @see {@link docs/testing/unit/scenes.md} Scene testing guidelines and patterns
+ * @see {@link docs/testing/helpers/scene-test-bed.md} Scene testing utilities
+ * @see {@link docs/testing/mocking/mock-vs-helpers.md} Mocking strategy guidelines
+ * @see {@link docs/testing/jest-testing-strategy.md} Overall testing approach
+ * @see {@link tests/jest.setup.ts} Test environment configuration
+ */
+
 import { Scene } from 'phaser';
 import { jest } from '@jest/globals';
-import { SceneTestBed } from './helpers/scene-test-bed';
 
+/**
+ * Interface representing a mock Phaser sprite with common methods
+ * @interface MockSprite
+ */
 interface MockSprite {
   setPosition: jest.Mock;
   setOrigin: jest.Mock;
@@ -13,6 +33,10 @@ interface MockSprite {
   on: jest.Mock;
 }
 
+/**
+ * Interface representing a mock Phaser text object
+ * @interface MockText
+ */
 interface MockText {
   setPosition: jest.Mock;
   setOrigin: jest.Mock;
@@ -21,7 +45,11 @@ interface MockText {
   on: jest.Mock;
 }
 
-// Example scene for testing
+/**
+ * Example scene class for demonstrating test patterns
+ * @class ExampleScene
+ * @extends Phaser.Scene
+ */
 class ExampleScene extends Scene {
   sprite: any;
   text: any;
@@ -30,6 +58,11 @@ class ExampleScene extends Scene {
     super({ key: 'ExampleScene' });
   }
 
+  /**
+   * Creates the scene's game objects and sets up input handlers
+   * @method create
+   * @memberof ExampleScene
+   */
   create() {
     // Create a sprite
     this.sprite = this.add.sprite(100, 100, 'player');
@@ -54,6 +87,10 @@ class ExampleScene extends Scene {
   }
 }
 
+/**
+ * Test suite for ExampleScene
+ * @describe ExampleScene
+ */
 describe('ExampleScene', () => {
   let scene: ExampleScene;
   let spriteMock: MockSprite;
@@ -61,6 +98,10 @@ describe('ExampleScene', () => {
   let keyboardCallback: ((e: any) => void) | null = null;
   let pointerCallback: ((e: any) => void) | null = null;
 
+  /**
+   * Set up test environment before each test
+   * @beforeEach
+   */
   beforeEach(() => {
     // Create mock objects
     spriteMock = {
@@ -116,12 +157,19 @@ describe('ExampleScene', () => {
     scene.create();
   });
 
+  /**
+   * Clean up test environment after each test
+   * @afterEach
+   */
   afterEach(() => {
     jest.clearAllMocks();
     keyboardCallback = null;
     pointerCallback = null;
   });
 
+  /**
+   * @test Verifies correct creation of sprite and text objects with proper properties
+   */
   it('should create sprite and text with correct properties', () => {
     expect(scene.add.sprite).toHaveBeenCalledWith(100, 100, 'player');
     expect(spriteMock.setScale).toHaveBeenCalledWith(2);
@@ -133,6 +181,9 @@ describe('ExampleScene', () => {
     expect(textMock.setOrigin).toHaveBeenCalledWith(0.5);
   });
 
+  /**
+   * @test Verifies text update functionality when space key is pressed
+   */
   it('should update text when space key is pressed', () => {
     expect(scene.input.keyboard!.on).toHaveBeenCalledWith('keydown-SPACE', expect.any(Function));
     expect(keyboardCallback).toBeDefined();
@@ -143,6 +194,9 @@ describe('ExampleScene', () => {
     }
   });
 
+  /**
+   * @test Verifies sprite movement on pointer input
+   */
   it('should move sprite to pointer position on click', () => {
     expect(scene.input.on).toHaveBeenCalledWith('pointerdown', expect.any(Function));
     expect(pointerCallback).toBeDefined();

@@ -26,7 +26,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
+    minify: 'esbuild',
+    target: 'esnext',
+    cssTarget: 'esnext',
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
         manualChunks: (id) => {
@@ -55,15 +59,7 @@ export default defineConfig({
       }
     },
     // Increase the warning limit for large chunks
-    chunkSizeWarningLimit: 1500,
-    // Optimize for production
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        // Remove console.logs in production
-        drop_console: true
-      }
-    }
+    chunkSizeWarningLimit: 1500
   },
   base: './',
   assetsInclude: [
@@ -88,6 +84,12 @@ export default defineConfig({
   ],
   publicDir: 'public',
   optimizeDeps: {
-    include: ['phaser']
+    include: [
+      'phaser',
+      // Add other frequently used dependencies here
+    ],
+    esbuildOptions: {
+      target: 'esnext'
+    }
   }
 }); 

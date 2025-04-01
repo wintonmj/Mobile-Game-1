@@ -2,7 +2,6 @@
 description: Enforces comprehensive TypeScript coding standards for maintainability, readability, and type safety
 globs: ["**/*.ts", "**/*.tsx"]
 alwaysApply: true
-Rule Type: Auto
 ---
 # TypeScript Comprehensive Standards Guide
 
@@ -36,10 +35,10 @@ This rule provides a single, unified reference for TypeScript development practi
    - Utilize TypeScript utility types (`Partial<T>`, `Readonly<T>`, `Record<K,T>`, etc.)
 
 3. **Type Declarations and Organization**:
-   - Keep interface definitions focused and cohesive
-   - Group related types together in dedicated type files
+   - Keep interface definitions focused and cohesive [types.ts](mdc:docs/api/services/types.ts)
+   - Group related types together in dedicated type files 
    - Use descriptive names that reflect the purpose
-   - Add JSDoc comments for complex types
+   - Add JSDoc comments for complex types 
    - Consider breaking large interfaces into smaller, composable ones
 
 ### 2. Naming Conventions (High Priority)
@@ -156,6 +155,155 @@ This rule provides a single, unified reference for TypeScript development practi
    - Use named exports rather than default exports
    - Use explicit import statements rather than wildcard imports
    - Avoid circular dependencies
+
+### 7. Documentation Standards (High Priority)
+1. **File Documentation**:
+   - Add a file header JSDoc comment for every TypeScript file
+   - Document the file's purpose and responsibility
+   - List any major dependencies or related files
+   - Include any important notes about usage or limitations
+   - Example:
+   ```typescript
+   /**
+    * @file PlayerController.ts
+    * @description Manages player input and movement in the game world
+    * @dependencies
+    * - InputManager - Handles raw input processing
+    * - PhysicsSystem - Manages collision and movement
+    * @limitations
+    * - Currently only supports keyboard/mouse input
+    * - Maximum movement speed is capped at 1000 pixels/sec
+    */
+   ```
+
+2. **Class and Interface Documentation**:
+   - Document all classes and interfaces with JSDoc comments
+   - Explain the purpose and behavior of the class/interface
+   - Document any inheritance or implementation relationships
+   - List important methods and properties
+   - Include usage examples for complex classes
+   - Example:
+   ```typescript
+   /**
+    * Manages game entity state transitions and validates state changes
+    * @implements {IStateMachine<EntityState>}
+    * @example
+    * const stateMachine = new EntityStateMachine(entity);
+    * stateMachine.addTransition('idle', 'walking', () => true);
+    * stateMachine.transition('walking');
+    */
+   export class EntityStateMachine implements IStateMachine<EntityState> {
+   ```
+
+3. **Method and Function Documentation**:
+   - Document all public methods and functions with JSDoc
+   - Clearly describe the function's purpose and behavior
+   - Document all parameters and return values
+   - Include type information even when TypeScript provides it
+   - Document thrown exceptions and side effects
+   - Provide usage examples for complex functions
+   - Example:
+   ```typescript
+   /**
+    * Transitions an entity to a new state if the transition is valid
+    * @param {EntityState} newState - The state to transition to
+    * @param {TransitionOptions} [options] - Optional transition configuration
+    * @returns {boolean} True if transition was successful, false otherwise
+    * @throws {InvalidStateError} If the new state is not registered
+    * @example
+    * if (stateMachine.transition('attacking', { duration: 500 })) {
+    *   console.log('Entity is now attacking');
+    * }
+    */
+   public transition(newState: EntityState, options?: TransitionOptions): boolean {
+   ```
+
+4. **Property Documentation**:
+   - Document complex properties with JSDoc comments
+   - Explain the purpose and usage of the property
+   - Document any validation or constraints
+   - Include examples if usage is not obvious
+   - Example:
+   ```typescript
+   /**
+    * Current velocity vector of the entity
+    * @type {Vector2}
+    * @remarks
+    * - X component represents horizontal velocity (-1 to 1)
+    * - Y component represents vertical velocity (-1 to 1)
+    * - Magnitude is automatically clamped to 1
+    */
+   private velocity: Vector2;
+   ```
+
+5. **Type and Enum Documentation**:
+   - Document all type aliases and enums
+   - Explain the purpose and valid values
+   - Include examples of proper usage
+   - Document any validation or constraints
+   - Example:
+   ```typescript
+   /**
+    * Represents possible states for game entities
+    * @enum {string}
+    * @readonly
+    */
+   export enum EntityState {
+     /** Entity is not performing any action */
+     IDLE = 'idle',
+     /** Entity is moving in some direction */
+     WALKING = 'walking',
+     /** Entity is performing an attack action */
+     ATTACKING = 'attacking'
+   }
+   ```
+
+6. **Code Examples and Usage Documentation**:
+   - Include practical examples in JSDoc comments
+   - Show common use cases and patterns
+   - Demonstrate proper error handling
+   - Include examples of integration with other components
+   - Example:
+   ```typescript
+   /**
+    * Manages game audio with support for multiple channels and effects
+    * @example
+    * // Basic usage
+    * const audio = new AudioManager();
+    * await audio.init();
+    * audio.playSound('explosion', { volume: 0.8 });
+    * 
+    * // With effects
+    * audio.addEffect('explosion', {
+    *   reverb: true,
+    *   delay: 0.2
+    * });
+    */
+   export class AudioManager {
+   ```
+
+7. **Limitations and Special Considerations**:
+   - Document known limitations and edge cases
+   - Explain performance implications
+   - Note browser compatibility issues
+   - Document memory usage considerations
+   - List any required permissions or setup
+   - Example:
+   ```typescript
+   /**
+    * Handles WebGL shader effects for game rendering
+    * @limitations
+    * - Requires WebGL 2.0 support
+    * - Maximum of 16 simultaneous effects
+    * - High memory usage with multiple active effects
+    * @performance
+    * - Consider using pooling for particle effects
+    * - Disable effects on low-end devices
+    */
+   export class EffectManager {
+   ```
+
+// ... existing code ...
 
 ## Examples
 
@@ -340,4 +488,16 @@ test('player controller works', () => {
 - Better code maintainability
 - Faster onboarding for new developers
 - Reduction in technical debt
-- Improved static analysis results 
+- Improved static analysis results
+
+### Comments and Documentation
+- Follow Documentation Standards section for JSDoc comments (see Section 7)
+- Keep inline comments focused on explaining complex logic or non-obvious decisions
+- Update documentation when code changes
+- Document complex algorithms with clear explanations and references
+- Avoid commented-out code
+- Use TODO comments with tracking tickets for planned changes
+- Add references to related documentation when appropriate
+- Follow JSDoc standards for all documentation
+- Include examples for complex or non-obvious code
+- Document assumptions and preconditions 

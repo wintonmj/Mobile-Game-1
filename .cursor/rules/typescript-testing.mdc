@@ -1,1 +1,229 @@
- 
+---
+description: 
+globs: *.test.ts
+alwaysApply: false
+---
+ ---
+description: Defines comprehensive standards for creating and maintaining TypeScript test files, with specific focus on Phaser game testing
+globs: ["**/*.test.ts", "**/*.spec.ts"]
+alwaysApply: false
+Rule Type: Manual
+---
+# TypeScript Testing Standards
+
+## Description
+This rule provides standardized guidelines for creating and maintaining TypeScript test files, with specific emphasis on testing Phaser game components. It ensures consistent test structure, proper mocking patterns, and maintainable test code across the project.
+
+## Trigger Conditions
+- Creation of new test files (*.test.ts, *.spec.ts)
+- Modification of existing test files
+- Implementation of new features requiring tests
+- Code review of test files
+- Refactoring of test suites
+
+## Implementation Guidelines
+
+### 1. Test File Structure
+1. **File Organization**
+   - Name test files with `.test.ts` or `.spec.ts` suffix
+   - Mirror source file structure in test directory
+   - Group related tests in describe blocks
+   - Use descriptive test names
+   ```typescript
+   // player.test.ts
+   describe('Player', () => {
+     describe('movement', () => {
+       it('should move in specified direction when input received', () => {
+         // test implementation
+       });
+     });
+   });
+   ```
+
+2. **Test Setup**
+   - Use beforeEach for common setup
+   - Use afterEach for cleanup
+   - Initialize mocks before each test
+   - Reset state between tests
+   ```typescript
+   describe('GameComponent', () => {
+     let component: GameComponent;
+     let mockDependency: jest.Mocked<Dependency>;
+
+     beforeEach(() => {
+       mockDependency = createMockDependency();
+       component = new GameComponent(mockDependency);
+     });
+
+     afterEach(() => {
+       jest.clearAllMocks();
+     });
+   });
+   ```
+
+### 2. Mocking Standards
+1. **Mock Implementation**
+   - Use type-safe mocks
+   - Keep mock implementations minimal
+   - Mock only what's necessary
+   - Use factory functions for common mocks
+   ```typescript
+   function createMockScene(): jest.Mocked<Phaser.Scene> {
+     return {
+       add: {
+         image: jest.fn().mockReturnValue({
+           setPosition: jest.fn().mockReturnThis(),
+           setOrigin: jest.fn().mockReturnThis(),
+         }),
+       },
+       // ... other properties
+     } as any;
+   }
+   ```
+
+2. **Phaser-Specific Mocking**
+   - Mock scene lifecycle methods
+   - Mock game objects with chainable methods
+   - Handle event emitters properly
+   - Mock input handlers
+   ```typescript
+   const mockGameObject = {
+     setPosition: jest.fn().mockReturnThis(),
+     setOrigin: jest.fn().mockReturnThis(),
+     on: jest.fn().mockReturnThis(),
+   };
+   ```
+
+### 3. Test Patterns
+1. **Arrange-Act-Assert**
+   - Clearly separate setup, action, and verification
+   - Use descriptive variable names
+   - Keep tests focused and concise
+   ```typescript
+   it('should handle player damage', () => {
+     // Arrange
+     const player = createMockPlayer();
+     const damage = 10;
+
+     // Act
+     player.takeDamage(damage);
+
+     // Assert
+     expect(player.health).toBe(90);
+   });
+   ```
+
+2. **Async Testing**
+   - Use async/await for asynchronous tests
+   - Handle promises properly
+   - Test both success and error cases
+   ```typescript
+   it('should load assets asynchronously', async () => {
+     const scene = createMockScene();
+     await scene.preload();
+     expect(scene.load.image).toHaveBeenCalled();
+   });
+   ```
+
+### 4. Type Safety
+1. **Type Assertions**
+   - Use TypeScript type assertions carefully
+   - Create interfaces for mock objects
+   - Handle private members appropriately
+   ```typescript
+   interface MockScene extends Partial<Phaser.Scene> {
+     _private?: any;
+   }
+   ```
+
+## Examples
+
+### Scene Testing Example
+```typescript
+import { jest } from '@jest/globals';
+import { MainScene } from '../scenes/MainScene';
+
+describe('MainScene', () => {
+  let scene: MainScene;
+  let mockText: jest.Mocked<Phaser.GameObjects.Text>;
+
+  beforeEach(() => {
+    mockText = {
+      setOrigin: jest.fn().mockReturnThis(),
+      setText: jest.fn().mockReturnThis(),
+    } as any;
+
+    scene = new MainScene();
+    scene.add = {
+      text: jest.fn().mockReturnValue(mockText),
+    } as any;
+  });
+
+  it('should initialize UI elements', () => {
+    scene.create();
+    expect(scene.add.text).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(String),
+      expect.any(Object)
+    );
+  });
+});
+```
+
+### Event Testing Example
+```typescript
+describe('Input Handling', () => {
+  it('should register keyboard events', () => {
+    const scene = new GameScene();
+    scene.input = {
+      keyboard: {
+        on: jest.fn(),
+      },
+    } as any;
+
+    scene.create();
+
+    expect(scene.input.keyboard?.on).toHaveBeenCalledWith(
+      'keydown-SPACE',
+      expect.any(Function)
+    );
+  });
+});
+```
+
+## Best Practices
+- Write tests before or alongside implementation
+- Keep tests independent and isolated
+- Use descriptive test names
+- Mock at appropriate abstraction levels
+- Maintain test code quality
+- Follow TypeScript best practices
+- Use proper error handling
+- Keep mocks simple and focused
+- Clean up resources after tests
+- Use type-safe assertions
+
+## Integration
+- Works with Jest configuration
+- Complements TypeScript standards
+- Supports Phaser testing patterns
+- Integrates with CI/CD pipeline
+- Aligns with code review process
+
+## Version Control
+- Current version: v1.0.0
+- Last updated: 2024-04-01
+- Change history: Initial creation
+
+## Success Metrics
+- High test coverage (>80%)
+- Fast test execution
+- Low test maintenance overhead
+- Reduced regression issues
+- Clear test failure messages
+- Consistent test patterns
+- Type-safe test code
+- Proper mock usage
+- Clean test reports
+- Improved code quality

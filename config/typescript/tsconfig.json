@@ -15,8 +15,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client"],
-    "baseUrl": ".",
+    "types": ["vite/client", "jest"],
+    "baseUrl": "../..",
     "paths": {
       "@/*": ["src/*"],
       "@assets/*": ["src/assets/*"]
@@ -39,7 +39,7 @@
     // Emit
     "declaration": true,
     "sourceMap": true,
-    "outDir": "./dist",
+    "outDir": "../../dist",
     "removeComments": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -47,6 +47,6 @@
     // Projects
     "incremental": true,
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": ["../../src/**/*.ts", "../../src/**/*.d.ts", "../../src/**/*.tsx", "../../src/**/*.vue", "../../tests/**/*.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 } 

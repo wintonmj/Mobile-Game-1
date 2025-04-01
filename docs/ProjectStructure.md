@@ -9,6 +9,51 @@ This document defines the project structure for our browser-based RPG game. It a
 - [Service Implementation Patterns](architecture/patterns/service-implementation-patterns.md) - Service design patterns
 - [Technical Stack](architecture/technical-stack.md) - Technical stack details
 
+## Root Directory Structure
+The root directory contains essential configuration files and directories:
+
+```
+/
+├── config/                    # Configuration directory for build and dev tools
+│   ├── jest/                 # Jest testing configuration
+│   │   └── jest.config.js    # Main Jest configuration
+│   ├── typescript/           # TypeScript configurations
+│   │   ├── tsconfig.json     # Main TypeScript configuration
+│   │   └── tsconfig.node.json # Node-specific TypeScript config
+│   └── vite/                 # Vite configurations
+│       └── vite.config.ts    # Main Vite configuration
+├── .vscode/                  # VS Code specific settings
+├── .cursor/                  # Cursor IDE settings
+├── src/                      # Source code
+├── public/                   # Static assets
+├── dist/                     # Build output
+├── docs/                     # Documentation
+├── tests/                    # Test files
+├── scripts/                  # Shell scripts and utilities
+├── coverage/                 # Test coverage reports
+├── __mocks__/               # Jest mock implementations
+├── node_modules/            # Dependencies
+├── .gitignore              # Git ignore patterns
+├── .eslintrc.json         # ESLint configuration
+├── .prettierrc            # Prettier configuration
+├── .prettierignore        # Prettier ignore patterns
+├── package.json           # Project manifest
+└── package-lock.json      # Dependency lock file
+```
+
+### Configuration Files Organization
+- **Build Tools**: Configuration files for build tools (Vite, TypeScript) are organized in the `config/` directory
+- **Code Style**: Linting and formatting configurations (`.eslintrc.json`, `.prettierrc`) remain in root for tool compatibility
+- **Version Control**: Git-related files (`.gitignore`) remain in root as per Git requirements
+- **Package Management**: `package.json` and `package-lock.json` remain in root as per npm requirements
+- **IDE Settings**: IDE-specific settings are kept in their respective directories (`.vscode/`, `.cursor/`)
+
+This organization provides:
+- Clear separation of configuration concerns
+- Easy location of related configurations
+- Maintainable structure as the project grows
+- Compatibility with tools that expect certain files in the root
+
 ## Implementation Phases
 
 ### Phase 1 - Core Implementation

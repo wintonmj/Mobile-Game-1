@@ -21,10 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Service layer implementation
 - Object placement system
 - Texture atlas system
+- Comprehensive Phaser.js mocking utilities for testing
+- Test helper utilities including scene-test-bed
+- Detailed mocking documentation and setup guides
 
 ### Changed
 - Restructured documentation according to DocumentationPlan.md
 - Reorganized project structure for better maintainability
+- Enhanced testing infrastructure with improved mock factories
+- Updated project structure documentation for testing
 
 ### Fixed
 - None
