@@ -77,16 +77,10 @@ export default {
   setupFiles: [
     resolve(projectRoot, 'tests/jest.setup.ts')
   ],
-  globals: {
-    'ts-jest': {
-      isolatedModules: true,
-      diagnostics: {
-        warnOnly: true
-      }
-    }
-  },
   maxWorkers: '50%',
-  timers: 'modern',
+  fakeTimers: {
+    enableGlobally: true
+  },
   clearMocks: true,
   restoreMocks: true,
   resetMocks: false

@@ -12,7 +12,7 @@
  * @see {@link docs/design/mvp-design.md} - MVP design specifications
  */
 
-import { jest } from '@jest/globals';
+import { jest, expect } from '@jest/globals';
 
 /**
  * Canvas context mock interface for 2D rendering context.

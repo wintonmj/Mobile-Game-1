@@ -255,4 +255,23 @@ describe('MainScene', () => {
       expect(counterText).toBe('Clicks: 0');
     });
   });
+
+  it('should be created with correct scene key', () => {
+    expect(scene.scene.key).toBe('MainScene');
+  });
+
+  it('should create game objects in create method', () => {
+    // Mock scene methods
+    scene.add = {
+      image: jest.fn().mockReturnValue(createTestGameObject('image')),
+      sprite: jest.fn().mockReturnValue(createTestGameObject('sprite'))
+    } as any;
+
+    // Call create method
+    scene.create();
+
+    // Verify game objects were created
+    expect(scene.add.image).toHaveBeenCalled();
+    expect(scene.add.sprite).toHaveBeenCalled();
+  });
 }); 
