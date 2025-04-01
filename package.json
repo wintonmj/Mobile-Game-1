@@ -4,6 +4,7 @@
     "description": "A simple 2D dungeon crawler game using Phaser.js",
     "type": "module",
     "scripts": {
+        "prepare": "husky",
         "start": "vite preview --config config/vite/vite.config.ts",
         "dev": "vite --config config/vite/vite.config.ts",
         "build": "tsc --project config/typescript/tsconfig.json && vite build --config config/vite/vite.config.ts",
@@ -34,6 +35,7 @@
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "express": "^4.21.2",
+        "husky": "^9.1.7",
         "jest": "^29.7.0",
         "jest-environment-jsdom": "^29.7.0",
         "jest-extended": "^4.0.2",
