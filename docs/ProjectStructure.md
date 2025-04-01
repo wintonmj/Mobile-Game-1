@@ -15,6 +15,8 @@ The root directory contains essential configuration files and directories:
 ```
 /
 ├── config/                    # Configuration directory for build and dev tools
+│   ├── commitlint/           # Commitlint configuration
+│   │   └── commitlint.config.cjs
 │   ├── jest/                 # Jest testing configuration
 │   │   └── jest.config.js    # Main Jest configuration
 │   ├── typescript/           # TypeScript configurations
