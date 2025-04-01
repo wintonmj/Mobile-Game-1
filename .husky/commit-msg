@@ -2,4 +2,4 @@
 
 # Validate commit message
 echo "🔍 Validating commit message..."
-npx --no -- commitlint --edit "$1"
+npx --no -- commitlint --config ./config/commitlint/commitlint.config.cjs --edit "$1"
