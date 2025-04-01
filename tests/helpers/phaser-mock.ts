@@ -3,65 +3,13 @@
  */
 
 import { jest } from '@jest/globals';
-
-// Mock Phaser module
-jest.mock('phaser', () => ({
-  Scene: class {
-    add = {
-      image: jest.fn().mockReturnValue({ setOrigin: jest.fn().mockReturnThis() }),
-      text: jest.fn().mockReturnValue({ setOrigin: jest.fn().mockReturnThis() })
-    };
-    
-    cameras = {
-      main: {
-        centerX: 400,
-        centerY: 300
-      }
-    };
-    
-    input = {
-      keyboard: {
-        on: jest.fn()
-      },
-      on: jest.fn()
-    };
-    
-    scene = {
-      start: jest.fn()
-    };
-  }
-}));
-
-export class MockScene {
-  add = {
-    image: jest.fn().mockReturnValue({ setOrigin: jest.fn().mockReturnThis() }),
-    text: jest.fn().mockReturnValue({ setOrigin: jest.fn().mockReturnThis() })
-  };
-  
-  cameras = {
-    main: {
-      centerX: 400,
-      centerY: 300
-    }
-  };
-  
-  input = {
-    keyboard: {
-      on: jest.fn()
-    },
-    on: jest.fn()
-  };
-  
-  scene = {
-    start: jest.fn()
-  };
-}
+import { Scene } from 'phaser';
 
 export function createMockScene() {
-  return {
+  const mockScene = {
     // Scene properties
     add: {
-      sprite: jest.fn().mockReturnValue({
+      sprite: jest.fn().mockImplementation(() => ({
         setPosition: jest.fn().mockReturnThis(),
         setOrigin: jest.fn().mockReturnThis(),
         setScale: jest.fn().mockReturnThis(),
@@ -70,8 +18,8 @@ export function createMockScene() {
         setTint: jest.fn().mockReturnThis(),
         play: jest.fn().mockReturnThis(),
         on: jest.fn().mockReturnThis(),
-      }),
-      image: jest.fn().mockReturnValue({
+      })),
+      image: jest.fn().mockImplementation(() => ({
         setPosition: jest.fn().mockReturnThis(),
         setOrigin: jest.fn().mockReturnThis(),
         setScale: jest.fn().mockReturnThis(),
@@ -79,14 +27,14 @@ export function createMockScene() {
         setAlpha: jest.fn().mockReturnThis(),
         setTint: jest.fn().mockReturnThis(),
         on: jest.fn().mockReturnThis(),
-      }),
-      text: jest.fn().mockReturnValue({
+      })),
+      text: jest.fn().mockImplementation(() => ({
         setPosition: jest.fn().mockReturnThis(),
         setOrigin: jest.fn().mockReturnThis(),
         setStyle: jest.fn().mockReturnThis(),
         setText: jest.fn().mockReturnThis(),
         on: jest.fn().mockReturnThis(),
-      }),
+      })),
     },
     
     // Input
@@ -94,11 +42,12 @@ export function createMockScene() {
       keyboard: {
         on: jest.fn(),
         off: jest.fn(),
-        addKey: jest.fn().mockReturnValue({
+        addKey: jest.fn().mockImplementation(() => ({
           on: jest.fn(),
           isDown: false,
-        }),
+        })),
       },
+      on: jest.fn(),
     },
     
     // Scene management
@@ -128,11 +77,19 @@ export function createMockScene() {
     
     // Time
     time: {
-      addEvent: jest.fn().mockReturnValue({
+      addEvent: jest.fn().mockImplementation(() => ({
         remove: jest.fn(),
         paused: false,
-      }),
+      })),
       delayedCall: jest.fn(),
+    },
+    
+    // Cameras
+    cameras: {
+      main: {
+        centerX: 400,
+        centerY: 300,
+      },
     },
     
     // Lifecycle methods
@@ -141,4 +98,16 @@ export function createMockScene() {
     preload: jest.fn(),
     init: jest.fn(),
   };
-} 
+
+  return mockScene;
+}
+
+// Mock Phaser module
+jest.mock('phaser', () => ({
+  Scene: class MockScene extends Scene {
+    constructor(config: any) {
+      super(config);
+      Object.assign(this, createMockScene());
+    }
+  }
+})); 

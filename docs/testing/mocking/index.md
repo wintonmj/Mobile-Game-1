@@ -191,3 +191,25 @@ export const verifyMockCalls = (
    - Component Mocking
    - Phaser-Specific Mocking Strategies
    - Best Practices and Anti-Patterns
+
+# Testing Mocking Documentation
+
+## Overview
+This section contains documentation for mocking strategies and implementations used in testing.
+
+## Contents
+1. [Mocks vs Helpers](./mock-vs-helpers.md) - Understanding the difference between mocks and helpers
+2. [Mocking Strategies](./mocking-strategies.md) - General mocking patterns and approaches
+3. [Phaser Scene Mocking](./phaser-scene-mocking.md) - Specific patterns for mocking Phaser scenes
+4. [Test Data Strategy](./test-data-strategy.md) - Managing test data and fixtures
+
+## Quick Start
+For new developers, we recommend starting with:
+1. Read [Mocks vs Helpers](./mock-vs-helpers.md) to understand our testing architecture
+2. Review [Mocking Strategies](./mocking-strategies.md) for implementation patterns
+3. See specific examples in [Phaser Scene Mocking](./phaser-scene-mocking.md)
+
+## Related Documentation
+- [Jest Testing Strategy](../jest-testing-strategy.md)
+- [Test Implementation Details](../test-implementation-details.md)
+- [Coverage Requirements](../coverage-requirements.md)

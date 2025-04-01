@@ -3,6 +3,56 @@ import { jest } from '@jest/globals';
 class Scene {
   constructor(config) {
     Object.assign(this, config);
+    
+    // Set up add property with mock functions
+    this.add = {
+      sprite: jest.fn().mockImplementation(() => ({
+        setPosition: jest.fn().mockReturnThis(),
+        setOrigin: jest.fn().mockReturnThis(),
+        setScale: jest.fn().mockReturnThis(),
+        setDepth: jest.fn().mockReturnThis(),
+        setAlpha: jest.fn().mockReturnThis(),
+        setTint: jest.fn().mockReturnThis(),
+        play: jest.fn().mockReturnThis(),
+        on: jest.fn().mockReturnThis(),
+      })),
+      image: jest.fn().mockImplementation(() => ({
+        setPosition: jest.fn().mockReturnThis(),
+        setOrigin: jest.fn().mockReturnThis(),
+        setScale: jest.fn().mockReturnThis(),
+        setDepth: jest.fn().mockReturnThis(),
+        setAlpha: jest.fn().mockReturnThis(),
+        setTint: jest.fn().mockReturnThis(),
+        on: jest.fn().mockReturnThis(),
+      })),
+      text: jest.fn().mockImplementation(() => ({
+        setPosition: jest.fn().mockReturnThis(),
+        setOrigin: jest.fn().mockReturnThis(),
+        setStyle: jest.fn().mockReturnThis(),
+        setText: jest.fn().mockReturnThis(),
+        on: jest.fn().mockReturnThis(),
+      }))
+    };
+
+    // Set up input property with mock functions
+    this.input = {
+      keyboard: {
+        on: jest.fn(),
+        addKey: jest.fn().mockImplementation(() => ({
+          on: jest.fn(),
+          isDown: false
+        }))
+      },
+      on: jest.fn()
+    };
+
+    // Set up events property with mock functions
+    this.events = {
+      emit: jest.fn(),
+      on: jest.fn(),
+      once: jest.fn(),
+      off: jest.fn()
+    };
   }
   
   update() {}

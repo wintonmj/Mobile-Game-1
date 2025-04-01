@@ -4,11 +4,94 @@
 This document provides comprehensive documentation for mocking Phaser.js components in unit tests. These utilities help create isolated test environments for game components that depend on Phaser.js functionality.
 
 ## Contents
+- [Import and Initialization Sequence](#import-and-initialization-sequence)
 - [Mock Factories](#mock-factories)
 - [Scene Mocking](#scene-mocking)
 - [Game Object Mocking](#game-object-mocking)
 - [Input Mocking](#input-mocking)
 - [Examples](#examples)
+
+## Import and Initialization Sequence
+
+### Required Import Order
+```typescript
+// 1. Core dependencies
+import { Scene, GameObjects, Input } from 'phaser';
+import { jest } from '@jest/globals';
+
+// 2. Test utilities and mock factories
+import { createMockScene, createMockSprite } from './helpers/factories';
+
+// 3. Components under test
+import { YourGameComponent } from './components';
+```
+
+### Mock Initialization Order
+The sequence of mock initialization is critical for proper test functionality:
+
+1. **Import Dependencies**
+   - Ensure jest is imported before any mock creation
+   - Import all required Phaser types
+   - Import necessary test utilities
+
+2. **Define Mock Types**
+   ```typescript
+   interface MockGameObject {
+     // Type definitions
+   }
+   ```
+
+3. **Create Mock Instances**
+   ```typescript
+   const mockObject = createMockGameObject();
+   ```
+
+4. **Setup Test Environment**
+   ```typescript
+   describe('YourTest', () => {
+     beforeEach(() => {
+       // Initialize mocks in correct order
+       jest.clearAllMocks();
+       // Create mock instances
+       // Setup component under test
+     });
+   });
+   ```
+
+### Common Setup Issues and Solutions
+
+1. **Jest Not Defined**
+   ```typescript
+   // ❌ Wrong
+   const mock = jest.fn(); // Jest might be undefined
+
+   // ✅ Correct
+   import { jest } from '@jest/globals';
+   const mock = jest.fn();
+   ```
+
+2. **Mock Creation Order**
+   ```typescript
+   // ❌ Wrong
+   const scene = new GameScene();
+   const mockSprite = createMockSprite(); // Too late
+
+   // ✅ Correct
+   const mockSprite = createMockSprite();
+   const scene = new GameScene();
+   scene.add.sprite = jest.fn().mockReturnValue(mockSprite);
+   ```
+
+3. **Event Handler Registration**
+   ```typescript
+   // ❌ Wrong
+   scene.create();
+   scene.input.on = jest.fn(); // Too late
+
+   // ✅ Correct
+   scene.input.on = jest.fn();
+   scene.create();
+   ```
 
 ## Mock Factories
 

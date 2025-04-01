@@ -205,8 +205,12 @@ src/
 │       └── testing.config.ts      # Testing environment
 └── utils/         # Helper functions
 
+__mocks__/         # Jest mock implementations
+├── phaser.js      # Global Phaser.js mock
+└── other-libs/    # Other library mocks
+
 tests/             # Test files
-├── unit/        # Isolated component tests
+├── unit/         # Isolated component tests
 │   ├── services/    # Service unit tests
 │   │   ├── core/       # Core service tests
 │   │   ├── world/      # World service tests
@@ -233,8 +237,8 @@ tests/             # Test files
 │   ├── ui/         # UI component tests
 │   ├── scenes/     # Scene visual tests
 │   └── animations/ # Animation tests
-└── helpers/     # Test helpers and mocks
-    ├── phaser-mock.ts     # Phaser.js mocking utilities
+└── helpers/      # Test helpers and mocks
+    ├── phaser-mock.ts     # Phaser.js mocking utilities (uses __mocks__/phaser.js)
     ├── scene-test-bed.ts  # Scene testing utilities
     ├── factories/         # Test data factories
     │   ├── entity.factory.ts    # Entity test factories
@@ -450,4 +454,17 @@ For development process and workflow guidelines, refer to:
 2. **Version Control**
    - Keep documentation in sync with code versions
    - Tag documentation with release versions
-   - Maintain changelog for documentation 
+   - Maintain changelog for documentation
+
+### Mock Implementation Organization
+The project uses a two-level approach for mocking:
+
+1. **Global Mocks** (`__mocks__/`)
+   - Contains Jest automatic mocks for external modules
+   - `phaser.js`: Global Phaser.js mock implementation
+   - Used by Jest's automocking system
+
+2. **Test Helpers** (`tests/helpers/`)
+   - Contains utility functions and specialized mocks
+   - `phaser-mock.ts`: Higher-level mocking utilities
+   - Builds upon the global mocks for specific testing scenarios 
